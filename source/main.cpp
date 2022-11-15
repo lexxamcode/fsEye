@@ -15,7 +15,7 @@ int main(int argv, char* argc[])
     system("chcp 65001");
     string text = textProcessing::text_load("D:/dbase_en.txt");
     text = textProcessing::clear_text(text);
-    vector<string> tokenized_text = textProcessing::mystrtok(text, ' ');
+    vector<string> tokenized_text = textProcessing::mystrtok_vector(text, ' ');
     stemming::english_stem <> StemEnglish;
     
     cout << tokenized_text[500] << endl;

@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <regex>
+#include <set>
 
 namespace textProcessing
 {
@@ -47,7 +48,7 @@ namespace textProcessing
         return tokens;
     }
 
-    std::vector<std::string> mystrtok(std::string str, char delim) {
+    std::vector<std::string> mystrtok_vector(std::string str, char delim) {
         std::vector<std::string> tokens;
         std::string temp = "";
         for (int i = 0; i < str.length(); i++) {
@@ -60,5 +61,27 @@ namespace textProcessing
         }
         tokens.push_back(temp);
         return tokens;
+    }
+
+    std::set<std::string> mystrtok_set(std::string str, char delim) {
+        std::set<std::string> words;
+        std::string temp = "";
+        for (int i = 0; i < str.length(); i++) {
+            if (str[i] == delim) {
+                words.insert(temp);
+                temp = "";
+            }
+            else
+                temp += str[i];
+        }
+        words.insert(temp);
+        return words;
+    }
+
+    std::set<std::string> load_text_to_set(std::string filepath)
+    {
+        std::string text = text_load(filepath);
+        clear_text(text);
+        return mystrtok_set(text, ' ');
     }
 }
