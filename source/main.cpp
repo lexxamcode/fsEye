@@ -2,7 +2,7 @@
 #include <windows.h>
 #include <io.h>
 #include <fcntl.h>
-#include "include/text_processing.h"
+#include "../include/text_processing.h"
 #include "../include/localization.h"
 #include "../include/stemming/english_stem.h"
 

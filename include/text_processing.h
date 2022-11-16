@@ -5,7 +5,8 @@
 #include <regex>
 #include <set>
 #include <unordered_set>
-#include <
+#include <stemming/stemming.h>
+
 namespace textProcessing
 {
     std::string stop_symbols = "\t.,/\\=+_<>?'\":;'[]{}!@#$%^&*№1234567890";
@@ -120,14 +121,11 @@ namespace textProcessing
         return strtok_vector(text, ' ');
     }
 
-    std::string stemstr_en(std::string& word)
+    std::string stem_word(std::string& word, stemming::stem<>* stemmer)
     {
-        stemming::english_stem <> StemEnglish;
-    
         wstring temp = strtows(word, 65001);
-        StemEnglish(temp);
+        stemmer->operator()(temp);
         word = wstostr(temp, 65001);
-
         return word;
     }
 }

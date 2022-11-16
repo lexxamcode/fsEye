@@ -3,9 +3,10 @@
 #include <windows.h>
 #include <io.h>
 #include <fcntl.h>
-#include "../../include/text_processing/tokenizer.h"
+#include "../../include/text_processing.h"
 #include "../../include/localization.h"
 #include "../../include/stemming/english_stem.h"
+#include "../../include/stemming/stemming.h"
 
 using namespace std;
 using namespace localization;
@@ -47,11 +48,20 @@ class FVectorMaker
         // Third step - stemming dictionary  according to the set language:
         void stem_dictionary()
         {
+            // Create a stemmer;
+
             if (_lang[0] == 'f')
             {
                 switch(_lang[1])
                 {
                     case 'i': 
+                    {
+                        break;
+                    }
+                    case 'r':
+                    {
+                        break;
+                    }
                 }
             }
             if(_lang[0] == 's')
