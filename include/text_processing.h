@@ -4,7 +4,8 @@
 #include <string>
 #include <regex>
 #include <set>
-
+#include <unordered_set>
+#include <
 namespace textProcessing
 {
     std::string stop_symbols = "\t.,/\\=+_<>?'\":;'[]{}!@#$%^&*№1234567890";
@@ -34,7 +35,7 @@ namespace textProcessing
 
         return text;
     }
-
+    //Next method breaks with big data somehow
     std::vector<std::string> tokenize_text(std::string text)
     {
         //std::regex sample("^[A-Za-z-] | ^[А-Яа-я-]"); 
@@ -47,8 +48,8 @@ namespace textProcessing
 
         return tokens;
     }
-
-    std::vector<std::string> mystrtok_vector(std::string str, char delim) {
+    //And the next ones don't break with big data
+    std::vector<std::string> strtok_vector(std::string str, char delim) {
         std::vector<std::string> tokens;
         std::string temp = "";
         for (int i = 0; i < str.length(); i++) {
@@ -63,7 +64,7 @@ namespace textProcessing
         return tokens;
     }
 
-    std::set<std::string> mystrtok_set(std::string str, char delim) {
+    std::set<std::string> strtok_set(std::string str, char delim) {
         std::set<std::string> words;
         std::string temp = "";
         for (int i = 0; i < str.length(); i++) {
@@ -78,10 +79,55 @@ namespace textProcessing
         return words;
     }
 
+    std::unordered_set<std::string> strtok_uset(std::string str, char delim)
+    {
+        std::unordered_set<std::string> words;
+        std::string temp = "";
+
+        for (int i; i < str.length(); i++)
+        {
+            if (str[i] == delim)
+            {
+                words.insert(temp);
+                temp = "";
+            }
+            else
+                temp += str[i];
+        }
+        words.insert(temp);
+        return words;
+    }
+
     std::set<std::string> load_text_to_set(std::string filepath)
     {
         std::string text = text_load(filepath);
         clear_text(text);
-        return mystrtok_set(text, ' ');
+        return strtok_set(text, ' ');
+    }
+
+    std::unordered_set<std::string> load_text_to_uset(std::string filepath)
+    {
+        std::string text = text_load(filepath);
+        clear_text(text);
+        return strtok_uset(text, ' ');
+    }
+
+
+    std::vector<std::string> load_text_to_vector(std::string filepath)
+    {
+        std::string text = text_load(filepath);
+        clear_text(text);
+        return strtok_vector(text, ' ');
+    }
+
+    std::string stemstr_en(std::string& word)
+    {
+        stemming::english_stem <> StemEnglish;
+    
+        wstring temp = strtows(word, 65001);
+        StemEnglish(temp);
+        word = wstostr(temp, 65001);
+
+        return word;
     }
 }
