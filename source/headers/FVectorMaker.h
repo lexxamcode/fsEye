@@ -117,11 +117,11 @@ class FVectorMaker
                     //Russian stemmer
                     _stemmer = new stemming::russian_stem<>;
                 }
-                else if (_lang == "se")
-                {
-                    //Swedish stemmer
-                    _stemmer = new stemming::swedish_stem<>;
-                }
+                // else if (_lang == "se")
+                // {
+                //     //Swedish stemmer
+                //     _stemmer = new stemming::swedish_stem<>;
+                // }
                 else
                 {
                     _lang = "";
@@ -146,12 +146,15 @@ class FVectorMaker
         {
             if (_stopwords.empty() || _dictionary.empty())
                 return;
-            
+            vector<string> tmp;
             for (auto it = _dictionary.begin(); it != _dictionary.end(); it++)
             {
-                if (_stopwords.count(*it))
-                    _dictionary.erase(it);
+                if (!_stopwords.count(*it))
+                {
+                    tmp.push_back(*it);
+                }
             }
+            _dictionary = tmp;
         }
         // Third step - stemming dictionary  according to the set language:
         void stem_dictionary()
@@ -163,7 +166,7 @@ class FVectorMaker
         void clear_dict_from_identical()
         {
             std::sort(_dictionary.begin(), _dictionary.end());
-            _dictionary.erase(std::unique(_dictionary.begin(), _dictionary.end()));
+            _dictionary.erase(std::unique(_dictionary.begin(), _dictionary.end()), _dictionary.end());
         }
         // Now We can Prepare this class for making Feature vector
         void set_ready(const string& init_dict_path, const string& init_stopwords_path, const string& language)
@@ -173,6 +176,7 @@ class FVectorMaker
             _lang = language;
             if (_lang.size() != 2) // must be two symbols: "en", "ru", "fr" etc.
                 throw - 1;
+            set_stemmer();
             clear_dict_from_stopwords();
             stem_dictionary();
             clear_dict_from_identical();

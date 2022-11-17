@@ -15,7 +15,7 @@ namespace textProcessing
     std::string stop_symbols = "\t.,/\\=+_<>?'\":;'[]{}!@#$%^&*№1234567890";
     std::regex txt_file("(.*?)(\.txt)");
 
-    std::string text_load(std::string path)
+    std::string text_load(const std::string& path)
     {
         if (std::regex_match(path, txt_file))
         {
@@ -26,6 +26,7 @@ namespace textProcessing
             return str;
         }
         else std::cout << "Not a txt file" << std::endl;
+        return "";
     }
 
     std::string clear_text(std::string &text)
@@ -88,7 +89,7 @@ namespace textProcessing
         std::unordered_set<std::string> words;
         std::string temp = "";
 
-        for (int i; i < str.length(); i++)
+        for (int i = 0; i < str.length(); i++)
         {
             if (str[i] == delim)
             {
