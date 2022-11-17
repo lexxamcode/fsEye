@@ -4,22 +4,19 @@ using namespace std;
 
 int main(int argv, char* argc[])
 {
-    FVectorMaker test_maker("../../data/dictionaries/en_dictionary.txt", "../../data/stopwords/en_stopwords.txt", "en");
+    const string dict_path = "../../data/dictionaries/en_dictionary.txt";
+    const string stopwords_path = "../../data/stopwords/en_stopwords.txt";
+    const string text_path = "../../test.txt";
+    string text = text_load(text_path);
+    cout << text << endl;
+
+    FVectorMaker test_maker(dict_path, stopwords_path, "en");
     vector<string> dict = test_maker.get_dictionary();
-    cout << "Dictionary: " << endl;
-    cout << dict.size();
-    for (auto &it: dict)
-        cout << it << endl;
-    system("pause");
+    cout << "Dictionary created, EN" << endl;
 
-    unordered_set<string> stopwords = test_maker.get_stopwords();
+    map<int, int> feature_vector = test_maker.make_feature_vector(text_path);
 
-    cout << stopwords.size();
-    for (auto &it: stopwords)
-        cout << it << endl;
-    system("pause");
-
-    string lang = test_maker.get_lang();
-    cout << lang << endl;
+    for (auto &key: feature_vector)
+        cout << key.first << " : " << key.second << endl;
     system("pause");
 }

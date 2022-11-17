@@ -103,6 +103,25 @@ namespace textProcessing
         return words;
     }
 
+    std::multiset<std::string> strtok_mset(std::string str, char delim)
+    {
+        std::multiset<std::string> words;
+        std::string temp = "";
+
+        for (int i = 0; i < str.length(); i++)
+        {
+            if (str[i] == delim)
+            {
+                words.insert(temp);
+                temp = "";
+            }
+            else
+                temp += str[i];
+        }
+        words.insert(temp);
+        return words;
+    }
+    
     std::set<std::string> load_text_to_set(std::string filepath)
     {
         std::string text = text_load(filepath);
@@ -115,6 +134,13 @@ namespace textProcessing
         std::string text = text_load(filepath);
         clear_text(text);
         return strtok_uset(text, ' ');
+    }
+
+    std::multiset<std::string> load_text_to_mset(std::string filepath)
+    {
+        std::string text = text_load(filepath);
+        clear_text(text);
+        return strtok_mset(text, ' ');
     }
 
 

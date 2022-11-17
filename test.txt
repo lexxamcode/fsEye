@@ -1,0 +1,7 @@
+Though the index and search were split into their own fields, they share similar parameters. Search for “abc” and the index will look for all files with a matching key. In the indexing section, the two features share some of the same criteria, although the indexing app does a better job of finding files than the search.
+
+Windows Search does not have the advantage of integration with Windows 8 or Windows Phone 8 apps, so developers and end users wanting a single search feature will have to use alternative solutions (such as TextMate and Jetstream, for example).
+
+Unlike in other apps, Windows Search cannot share data between databases or file types, and the search feature uses the Windows Search index, which is not the most flexible database system. Windows Search only supports searching files or other indexed objects in the same folder, or files inside the current folder.
+
+Unlike the Windows 8 Mobile apps (such as Groove Music or Microsoft Word Mobile), the Windows Search app requires

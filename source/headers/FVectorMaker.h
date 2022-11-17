@@ -3,6 +3,7 @@
 #include <windows.h>
 #include <io.h>
 #include <fcntl.h>
+#include <map>
 #include "../../include/text_processing.h"
 #include "../../include/stemming/allstems.h"
 
@@ -210,5 +211,29 @@ class FVectorMaker
         unordered_set<string> get_stopwords() const
         {
             return _stopwords;
+        }
+
+        //Feature Vector make function
+        map<int, int> make_feature_vector(const string& file_path) const
+        {
+            multiset<string> text_words;
+            vector<string> temp = load_text_to_vector(file_path);
+
+            for (auto &word: temp)
+                text_words.insert(stem_word(word, _stemmer));
+
+            map<int, int> feature_vector;
+            
+            for (int i = 0; i < _dictionary.size(); i++)
+            {
+                int word_counter = text_words.count(_dictionary[i]);
+                if (word_counter > 0)
+                {
+                    cout << _dictionary[i] << endl;
+                    feature_vector[i] = word_counter;
+                }
+            }
+
+            return feature_vector;
         }
 };
