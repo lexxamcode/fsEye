@@ -1,0 +1,2 @@
+english dictionary: https://github.com/dwyl/english-words/blob/master/words_alpha.txt
+english stopwords:https://gist.github.com/sebleier/554280#file-nltk-s-list-of-english-stopwords

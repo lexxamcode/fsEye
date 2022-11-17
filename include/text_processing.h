@@ -6,6 +6,9 @@
 #include <set>
 #include <unordered_set>
 #include <stemming/stemming.h>
+#include "localization.h"
+#include "stemming/stemming.h"
+#include <stringapiset.h>
 
 namespace textProcessing
 {
@@ -123,9 +126,9 @@ namespace textProcessing
 
     std::string stem_word(std::string& word, stemming::stem<>* stemmer)
     {
-        wstring temp = strtows(word, 65001);
+        std::wstring temp = localization::strtows(word, 65001);
         stemmer->operator()(temp);
-        word = wstostr(temp, 65001);
+        word = localization::wstostr(temp, 65001);
         return word;
     }
 }

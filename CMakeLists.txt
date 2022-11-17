@@ -4,4 +4,6 @@ project(fsEye)
 
 add_executable(fsEye source/main.cpp source/headers/FVectorMaker.h)
 set(INCLUDE_DIR include)
+set(DATA_DIR data)
 target_include_directories(fsEye PRIVATE ${INCLUDE_DIR})
+target_include_directories(fsEye PRIVATE ${DATA_DIR})

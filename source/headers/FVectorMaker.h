@@ -4,7 +4,6 @@
 #include <io.h>
 #include <fcntl.h>
 #include "../../include/text_processing.h"
-#include "../../include/localization.h"
 #include "../../include/stemming/allstems.h"
 
 using namespace std;
@@ -172,7 +171,7 @@ class FVectorMaker
             _dictionary = load_text_to_vector(init_dict_path);
             _stopwords = load_text_to_uset(init_stopwords_path);
             _lang = language;
-            if (_lang.size() != 2)
+            if (_lang.size() != 2) // must be two symbols: "en", "ru", "fr" etc.
                 throw - 1;
             clear_dict_from_stopwords();
             stem_dictionary();
@@ -185,7 +184,7 @@ class FVectorMaker
             - One Word per line
             So any file that is going to be the dictionary or stopwords list will be cleared, tokenized and stemmed
         */
-       
+
         // FVectorMaker();
         // FVectorMaker(const vector<string>& init_dict): _dictionary(init_dict) { }
         FVectorMaker(const string& init_dict_path, const string& init_stopwords_path, const string& language)
