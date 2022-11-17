@@ -1,0 +1,12 @@
+danish dk 
+dutch nl 
+english en 
+finnish fi
+french fr
+german de
+italian it
+norwegian no
+portuguese pt
+russian ru
+spanish es
+swedish se
