@@ -24,7 +24,12 @@ int main(int argv, char* argc[])
     feature_vector::FVector feature_vector1 = test_maker.make_feature_vector(text1_path);
     feature_vector::FVector feature_vector2 = test_maker.make_feature_vector(text2_path);
 
-    cout << feature_vector::correlation(feature_vector1, feature_vector2);
+    cout << "Correlation: " << feature_vector::correlation(feature_vector1, feature_vector2) << endl;
+    cout << "Euclidean distance: " << feature_vector::euclidean_distance(feature_vector1, feature_vector1) << endl;
+    cout << "Normalized Euclidean distance: " << feature_vector::normalized_euclidean_distance(feature_vector1, feature_vector2) << endl;
+    //cout << "Chi Square: " << feature_vector::chi_square(feature_vector1, feature_vector2) << endl;
+    cout << "Intersection: " << feature_vector::intersection(feature_vector1, feature_vector2) << endl;
+    cout << "Normalized intersection: " << feature_vector::normalized_intersection(feature_vector1, feature_vector2) << endl;
     // for (auto &key: feature_vector1.get_sparse_vector())
     //     cout << key.first << " : " << key.second << endl;
     system("pause");
