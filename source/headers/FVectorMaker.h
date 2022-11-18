@@ -10,9 +10,24 @@ using namespace std;
 using namespace localization;
 using namespace textProcessing;
 
-// FVectorMaker is a class with contained dictionary
-// It provides work with given text, feature vectors,
-// Stopwords and more.
+/* 
+    FVectorMaker is a class with contained dictionary
+    It provides work with given text, feature vectors,
+    Stopwords and more. 
+    Awailable languages:
+        danish dk 
+        dutch nl 
+        english en 
+        finnish fi
+        french fr
+        german de
+        italian it
+        norwegian no
+        portuguese pt
+        russian ru
+        spanish es
+        swedish se
+*/
 class FVectorMaker
 {
     private:
@@ -187,12 +202,23 @@ class FVectorMaker
             - No characters other than the alphabet, - and \n
             - One Word per line
             So any file that is going to be the dictionary or stopwords list will be cleared, tokenized and stemmed
+            Awailable languages:
+                danish dk 
+                dutch nl 
+                english en 
+                finnish fi
+                french fr
+                german de
+                italian it
+                norwegian no
+                portuguese pt
+                russian ru
+                spanish es
+                swedish se
         */
-
-        // FVectorMaker();
-        // FVectorMaker(const vector<string>& init_dict): _dictionary(init_dict) { }
         FVectorMaker(const string& init_dict_path, const string& init_stopwords_path, const string& language)
         {
+            
             set_ready(init_dict_path, init_stopwords_path, language);
         }
         ~FVectorMaker()
@@ -227,10 +253,7 @@ class FVectorMaker
             {
                 int word_counter = text_words.count(_dictionary[i]);
                 if (word_counter > 0)
-                {
-                    cout << _dictionary[i] << endl;
                     sparse_vector[i] = word_counter;
-                }
             }
             feature_vector::FVector result(sparse_vector, _dictionary.size());
             return result;

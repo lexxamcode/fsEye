@@ -1,0 +1,5 @@
+The results are very encouraging. Use text for indexing and the indexing tends to be very strong. Text indexes are also sometimes used to fetch the information. The information technologies in the process used include a knowledge graph that is also used for transferring information. Finally, text can be used for more complex analysis. The text indexes in many cases do not process information in a simple machine-readable form. This is extremely valuable information for analysts who can look for trends and patterns by analysing the texts. Text analytics is often used in research but still the advantages of text processing are seen for production systems. As long as processing text is robust and you want to process large amounts of information, using text may be the right answer for your enterprise.
+
+The conclusion that I make is that text processing tends to be very strong for many things.
+
+Robert Kaplan from Facebook and Jeremy Bigham from Microsoft Research have provided good examples of how text processing might be used for various kinds of applications.

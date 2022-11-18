@@ -13,7 +13,7 @@
 namespace textProcessing
 {
     std::string stop_symbols = "\t.,/\\=+_<>?'\":;'[]{}!@#$%^&*№1234567890";
-    std::regex txt_file("(.*?)(\.txt)");
+    std::regex txt_file("(.*?)(\.txt)|(.*?)(\.dat)");
 
     std::string text_load(const std::string& path)
     {
@@ -25,18 +25,21 @@ namespace textProcessing
             std::copy(std::istream_iterator<char>(ifs), std::istream_iterator<char>(), std::back_inserter(str));
             return str;
         }
-        else std::cout << "Not a txt file" << std::endl;
+        else 
+            std::cout << "Not a txt or dat file" << std::endl;
         return "";
+    }
+
+    bool trash_symbol(const char& symbol)
+    {
+        return (stop_symbols.find(symbol) != std::string::npos);
     }
 
     std::string clear_text(std::string &text)
     {
         std::replace(text.begin(), text.end(), '\n', ' ');
-        for (auto it = text.begin(); it != text.end(); it++)
-        {
-            if (stop_symbols.find(*it) != std::string::npos)
-                text.erase(it);
-        }
+        
+        text.erase(remove_if(text.begin(), text.end(), trash_symbol), text.end());
 
         return text;
     }
@@ -63,7 +66,7 @@ namespace textProcessing
                 temp = "";
             }
             else
-                temp += str[i];
+                temp += std::tolower(str[i]);
         }
         tokens.push_back(temp);
         return tokens;
@@ -78,7 +81,7 @@ namespace textProcessing
                 temp = "";
             }
             else
-                temp += str[i];
+                temp += std::tolower(str[i]);
         }
         words.insert(temp);
         return words;
@@ -97,7 +100,7 @@ namespace textProcessing
                 temp = "";
             }
             else
-                temp += str[i];
+                temp += std::tolower(str[i]);
         }
         words.insert(temp);
         return words;
@@ -116,7 +119,7 @@ namespace textProcessing
                 temp = "";
             }
             else
-                temp += str[i];
+                temp += std::tolower(str[i]);
         }
         words.insert(temp);
         return words;
