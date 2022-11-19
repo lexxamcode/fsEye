@@ -26,7 +26,6 @@ using namespace textProcessing;
         portuguese pt
         russian ru
         spanish es
-        swedish se
 */
 class FVectorMaker
 {
@@ -132,11 +131,6 @@ class FVectorMaker
                     //Russian stemmer
                     _stemmer = new stemming::russian_stem<>;
                 }
-                // else if (_lang == "se")
-                // {
-                //     //Swedish stemmer
-                //     _stemmer = new stemming::swedish_stem<>;
-                // }
                 else
                 {
                     _lang = "";
@@ -147,16 +141,8 @@ class FVectorMaker
         }
 
         // Steps to prepare given txt files for making feature vector:
-        // First step - making vector from txt file of dictionary and set from txt file of stop-words:
-        void load_dictionary(const string& dict_path)
-        {
-            _dictionary = load_text_to_vector(dict_path);
-        }
-        void load_stop_words(const string& stopwords_path)
-        {
-            _stopwords = load_text_to_uset(stopwords_path);
-        }
-        // Second step - clearing dictionary from stop-words:
+        // First step - making vector from txt file of dictionary and set from txt file of stop-words
+        // Second step - clearing dictionary from stop-words
         void clear_dict_from_stopwords()
         {
             if (_stopwords.empty() || _dictionary.empty())
@@ -171,12 +157,7 @@ class FVectorMaker
             }
             _dictionary = tmp;
         }
-        // Third step - stemming dictionary  according to the set language:
-        void stem_dictionary()
-        {
-            for (auto it = _dictionary.begin(); it != _dictionary.end(); it++)
-                stem_word(*it, _stemmer);
-        }
+        // Third step - stemming dictionary  according to the set language: Already stemmed in text_processing.h
         // Fourth step - reduce size of dictionary by erasing identical elements
         void clear_dict_from_identical()
         {
@@ -186,14 +167,14 @@ class FVectorMaker
         // Now We can Prepare this class for making Feature vector
         void set_ready(const string& init_dict_path, const string& init_stopwords_path, const string& language)
         {
-            _dictionary = load_text_to_vector(init_dict_path);
-            _stopwords = load_text_to_uset(init_stopwords_path);
             _lang = language;
             if (_lang.size() != 2) // must be two symbols: "en", "ru", "fr" etc.
                 throw - 1;
             set_stemmer();
+
+            _dictionary = text_to_vector(init_dict_path, _stemmer);
+            _stopwords = text_to_uset(init_stopwords_path, _stemmer);
             clear_dict_from_stopwords();
-            stem_dictionary();
             clear_dict_from_identical();
         }
     public:
@@ -242,7 +223,7 @@ class FVectorMaker
         feature_vector::FVector make_feature_vector(const string& file_path) const
         {
             multiset<string> text_words;
-            vector<string> temp = load_text_to_vector(file_path);
+            vector<string> temp = text_to_vector(file_path, _stemmer);
 
             for (auto &word: temp)
                 text_words.insert(stem_word(word, _stemmer));
