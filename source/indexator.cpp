@@ -43,8 +43,6 @@ int main(int argc, char* argv[])
             index_directory.append("\\index.json");
     }
 
-    // const boost::filesystem::path base_directory(given_directory);
-
     const string en_dict_path = "..\\..\\data\\dictionaries\\en_dictionary.txt";
     const string en_stopwords_path = "..\\..\\data\\stopwords\\en_stopwords.txt";
     const string text_path = "..\\..\\data\\text1.txt";
@@ -58,5 +56,4 @@ int main(int argc, char* argv[])
     json.open(index_directory);
     json << serialize(index_json);
     json.close();
-    system("pause");
 }
