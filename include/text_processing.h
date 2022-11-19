@@ -6,18 +6,20 @@
 #include <set>
 #include <unordered_set>
 #include <sstream>
+#include <stringapiset.h>
 
 #include "boost/iostreams/device/mapped_file.hpp"
-
+#include <pugixml.hpp>
+#include <zip.h>
+#include <duckx.hpp>
 #include <stemming/stemming.h>
 #include "localization.h"
 #include "stemming/stemming.h"
-#include <stringapiset.h>
 
 namespace textProcessing
 {
-    const std::string stop_symbols = "\n\t.,/\\=+_-<>?'\":;'[]{}!@#$%^&*№1234567890";
-    const std::regex txt_file("(.*?)(\.txt)|(.*?)(\.dat)");
+    const std::string stop_symbols = " \n\t.,/\\=+_-<>?'\":;'[]{}!@#$%^&*№1234567890";
+    const std::regex txt_file("(.*?)(\.txt)|(.*?)(\.dat)|(.*?)(\.rtf)");
     const std::regex doc_file("(.*?)(\.doc)|(.*?)(\.docx)");
 
     using namespace boost::iostreams;
@@ -36,7 +38,7 @@ namespace textProcessing
     {
         std::vector<std::string> words;
 
-        if (std::regex_match(path, txt_file))
+        if (std::regex_match(path, txt_file) || std::regex_match(path, doc_file))
         {
             mapped_file fmap(path, mapped_file::readonly);
             auto f = fmap.const_data();
@@ -60,6 +62,12 @@ namespace textProcessing
             }
             return words;
         }
+        // else if (std::regex_match(path, doc_file))
+        // {
+        //     duckx::Document file(path);
+        //     file.open();
+
+        // }
         else
             std::cout << "Not a txt or dat file" << std::endl;
         return words;
