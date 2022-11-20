@@ -33,7 +33,32 @@ namespace textProcessing
         word = localization::wstostr(temp, 65001);
         return word;
     }
+    std::vector<std::string> string_to_vector(const std::string& str, stemming::stem<>* stemmer)
+    {
+        std::vector<std::string> words;
+        if (str.size() <= 0)
+            return words;
 
+        std::string word;
+        for (size_t i = 0; i < str.size(); i++)
+        {
+            if (!trash_symbol(str[i]))
+                word.push_back(tolower(str[i]));
+            else
+            {
+                if (!word.empty())
+                {
+                    stem_word(word, stemmer);
+                    words.push_back(word);
+                    word.erase();
+                }
+            }
+        }
+        if (!word.empty())
+                words.push_back(word);
+
+        return words;
+    }
     std::vector<std::string> text_to_vector(const std::string& path, stemming::stem<>* stemmer)
     {
         std::vector<std::string> words;
@@ -48,7 +73,7 @@ namespace textProcessing
             while(f && f !=l)
             {
                 if (!trash_symbol(*f))
-                    word.push_back(*f);
+                    word.push_back(tolower(*f));
                 else
                 {
                     if (!word.empty())
@@ -60,6 +85,9 @@ namespace textProcessing
                 }
                 f++;
             }
+            if (!word.empty())
+                words.push_back(word);
+
             return words;
         }
         // else if (std::regex_match(path, doc_file))
@@ -98,6 +126,9 @@ namespace textProcessing
                 }
                 f++;
             }
+
+            if (!word.empty())
+                wordset.insert(word);
             return wordset;
         }
         else

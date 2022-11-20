@@ -13,6 +13,7 @@ namespace indexing
 
     void index_entire_directory(const string& dir, const FVectorMaker& vector_maker, boost::json::object& main_json_target)
     {
+        
         for (const auto& file: boost::filesystem::directory_iterator(dir))
         {
             if (boost::filesystem::is_directory(file))
@@ -21,7 +22,7 @@ namespace indexing
             else
             {
                 boost::json::object current_file_fvector;
-                FVector features = vector_maker.make_feature_vector(file.path().string());
+                FVector features = vector_maker.make_feature_vector(file.path().string(), 1);
                 for (auto& it: features.get_sparse_vector())
                 {
                     current_file_fvector[to_string(it.first)] = it.second;
@@ -66,4 +67,29 @@ namespace indexing
         return result_data;
     }
     // Now read from index.json
+
+    vector<string> knn_algorithm(const string& text, const string& path_to_json, const FVectorMaker& maker, size_t k)
+    {
+        FVector given_fvector = maker.make_feature_vector(text, 0);
+        map<string, FVector> set_of_vectors = read_from_json(path_to_json, maker.get_dict_size());
+
+        vector<pair<double, string>> distances;
+
+        for (auto& it: set_of_vectors)
+        {
+            double distance = correlation(it.second, given_fvector);
+            pair<double, string> dist_path(distance, it.first);
+            distances.push_back(dist_path);
+        }
+
+        sort(distances.begin(), distances.end());
+
+        for (auto& it: distances)
+        {
+            cout << it.first << ": " << it.second << endl;
+        }
+
+        vector<string> found;
+        return found;
+    }
 }
