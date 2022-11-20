@@ -26,7 +26,9 @@ int main(int argc, char* argv[])
     // json.close();
 
     //FIND IN DIRECTORY
-    indexing::knn_algorithm(request, index_directory, en_index_maker, 4);
+    vector<string> found = indexing::knn_algorithm("japan ships target", index_directory, en_index_maker, 4);
+    for (auto& file: found)
+        cout << file << endl;
     system("pause");
 
     // indexing::index_entire_directory(given_directory, en_index_maker, index_json);

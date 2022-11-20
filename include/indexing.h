@@ -84,12 +84,12 @@ namespace indexing
 
         sort(distances.begin(), distances.end());
 
-        for (auto& it: distances)
-        {
-            cout << it.first << ": " << it.second << endl;
-        }
-
         vector<string> found;
+
+        for (int i = distances.size() - 1; i >= distances.size() - k; i--)
+        {
+            found.push_back(distances[i].second);
+        }
         return found;
     }
 }
