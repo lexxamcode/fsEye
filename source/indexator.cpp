@@ -1,31 +1,7 @@
-#include "headers/FVectorMaker.h"
-#include <boost/filesystem.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/json.hpp>
+#include "indexing.h"
 
 using namespace std;
 using namespace feature_vector;
-
-void index_entire_directory(const string& dir, const FVectorMaker& vector_maker, boost::json::object& main_json_target)
-{
-    for (const auto& file: boost::filesystem::directory_iterator(dir))
-    {
-        if (boost::filesystem::is_directory(file))
-            index_entire_directory(file.path().string(), vector_maker, main_json_target);
-        
-        else
-        {
-            boost::json::object current_file_fvector;
-            FVector features = vector_maker.make_feature_vector(file.path().string());
-            for (auto& it: features.get_sparse_vector())
-            {
-                current_file_fvector[to_string(it.first)] = it.second;
-            }
-            main_json_target[file.path().string()] = current_file_fvector;
-            cout << file.path().string() << endl;
-        }
-    }
-}
 
 int main(int argc, char* argv[])
 {
@@ -50,7 +26,7 @@ int main(int argc, char* argv[])
     stemming::stem<>* stemmer = new stemming::english_stem<>;
     FVectorMaker en_index_maker(en_dict_path, en_stopwords_path, "en");
 
-    index_entire_directory(given_directory, en_index_maker, index_json);
+    indexing::index_entire_directory(given_directory, en_index_maker, index_json);
 
     std::ofstream json;
     json.open(index_directory);
