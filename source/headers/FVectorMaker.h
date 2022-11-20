@@ -220,10 +220,16 @@ class FVectorMaker
         }
 
         //Feature Vector make function
-        feature_vector::FVector make_feature_vector(const string& file_path) const
+        //regime: 0 - make feature vector of text
+        //        1 - make feature vector of file
+        feature_vector::FVector make_feature_vector(const string& text_or_file, bool regime) const
         {
             multiset<string> text_words;
-            vector<string> temp = text_to_vector(file_path, _stemmer);
+            vector<string> temp;
+            if (regime)
+                temp = text_to_vector(text_or_file, _stemmer);
+            else
+                temp = string_to_vector(text_or_file, _stemmer);
 
             for (auto &word: temp)
                 text_words.insert(stem_word(word, _stemmer));
@@ -238,5 +244,10 @@ class FVectorMaker
             }
             feature_vector::FVector result(sparse_vector, _dictionary.size());
             return result;
+        }
+
+        size_t get_dict_size() const
+        {
+            return _dictionary.size();
         }
 };
