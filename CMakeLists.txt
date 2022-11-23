@@ -13,11 +13,11 @@ include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIR})
 
 # DuckX library for doc/docx file processing
+set(INCLUDE_DIR include)
+set(DATA_DIR data)
 set(DINCLUDE_DIR D:/codeprojects/DuckX/include)
 set(PUGIXMLDIR D:/codeprojects/pugixml/src)
 set(ZIPDIR D:/codeprojects/zip/src)
-set(INCLUDE_DIR include)
-set(DATA_DIR data)
 
 add_executable(fsEyeIndexator source/indexator.cpp 
                source/headers/FVectorMaker.h 

@@ -53,7 +53,6 @@ namespace indexing
 
         for (auto& path: load_ptree_root)
         {
-            cout << path.first << endl;
             map<size_t, size_t> sparse_vector;
             for (auto& index: path.second)
             {
