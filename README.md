@@ -8,16 +8,33 @@ Stemming tools (include/stemming .h files) I took from this repository: https://
 1. Download set of a libraries Boost from here: https://www.boost.org/users/download/
 
 2. Follow this guide to build Boost: https://www.boost.org/doc/libs/1_62_0/more/getting_started/windows.html#simplified-build-from-source
-3. Download the project:
+
+3. Download DuckX for processing doc/dockx files: https://github.com/amiremohamadi/DuckX
+   Also for correct DuckX work you'll need: 
+   
+   https://github.com/kuba--/zip
+   
+   https://github.com/zeux/pugixml
+4. Download the project:
 ```bash
 git clone https://github.com/lexxamcode/fsEye
 ```
-4. Add path to boost in CMakeLists.txt:
+5. Add path to boost, duckx, zip and pugixml files in CMakeLists.txt:
 ```cmake
+# Boost root and libraries directories are being set here
 set(Boost_INCLUDE_DIR YOUR_PATH_TO_BOOST_ROOT)
 set(Boost_LIBRARY_DIR YOUR_PATH_TO_BOOST_ROOT/stage/lib)
+
+# DuckX library for doc/docx file processing
+set(DINCLUDE_DIR YOUR_PATH_TO_DUCKX_ROOT/include)
+set(PUGIXMLDIR YOUR_PATH_TO_PUGIXML_ROOT/src)
+set(ZIPDIR YOUR_PATH_TO_ZIP_ROOT/src)
 ```
-5. Now build the project:
+6. Before building project change one thing in duckx.cpp:
+![image](https://user-images.githubusercontent.com/82732974/203646559-395e7f61-18b5-46f7-8c23-d4b7c7d4e8a0.png)
+(Hope this issue is solved when someone need this project, but if it's not, just make the change i showed :) )
+
+7. Now build the project:
 ```bash
 mkdir build
 cd build
