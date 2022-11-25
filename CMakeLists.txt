@@ -19,14 +19,21 @@ set(DINCLUDE_DIR D:/codeprojects/DuckX/include)
 set(PUGIXMLDIR D:/codeprojects/pugixml/src)
 set(ZIPDIR D:/codeprojects/zip/src)
 
+# SQLLite API connection
+set(SQLDIR D:/codeprojects/sqlite-amalgamation-3400000)
+include_directories(${SQLDIR})
+link_directories(${SQLDIR})
+
 add_executable(fsEyeIndexator source/indexator.cpp 
                source/headers/FVectorMaker.h 
-               source/headers/FVector.h)
+               source/headers/FVector.h
+               ${SQLDIR}/sqlite3.c)
 
 target_include_directories(fsEyeIndexator PRIVATE ${INCLUDE_DIR})
 target_include_directories(fsEyeIndexator PRIVATE ${DATA_DIR})
 target_include_directories(fsEyeIndexator PRIVATE ${DINCLUDE_DIR})
 target_include_directories(fsEyeIndexator PRIVATE ${PUGIXMLDIR})
-target_include_directories(fsEyeIndexator PUBLIC ${ZIPDIR})
+target_include_directories(fsEyeIndexator PRIVATE ${ZIPDIR})
+#target_include_directories(fsEyeIndexator PRIVATE ${SQLDIR})
 
 target_link_libraries(fsEyeIndexator ${Boost_LIBRARIES})
