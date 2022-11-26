@@ -1,11 +1,9 @@
-#include "boost/json.hpp"
-#include "boost/property_tree/ptree.hpp"
-#include "boost/property_tree/json_parser.hpp"
 #include "boost/filesystem.hpp"
 
 #include "../source/headers/FVectorMaker.h"
 
 #include <sqlite3.h>
+
 namespace indexing
 {
     using namespace std;
@@ -14,50 +12,6 @@ namespace indexing
     using namespace boost::filesystem;
 
     const std::regex json_file("(.*?)(\.json)");
-
-    void save_by_content_entire_directory_to_json(const string& dir, const FVectorMaker& vector_maker, boost::json::object& main_json_target)
-    {
-        
-        for (const auto& file: boost::filesystem::directory_iterator(dir))
-        {
-            if (boost::filesystem::is_directory(file))
-                save_by_content_entire_directory_to_json(file.path().string(), vector_maker, main_json_target);
-        
-            else
-            {
-                boost::json::object current_file_fvector;
-                FVector features = vector_maker.make_feature_vector(file.path().string(), 1);
-                for (auto& it: features.get_sparse_vector())
-                {
-                    current_file_fvector[to_string(it.first)] = it.second;
-                }
-                main_json_target[file.path().string()] = current_file_fvector;
-                cout << file.path().string() << endl;
-            }
-        }
-    }
-
-    void save_directory_to_json(const string& dir, boost::json::object& json_target)
-    {
-       for(const auto& file: directory_iterator(dir))
-       {
-            if(is_directory(file))
-            {
-                try
-                {
-                    save_directory_to_json(file.path().string(), json_target);
-                }
-                catch(const filesystem_error& e)
-                {
-                }
-                
-            }
-            else
-            {
-                json_target[file.path().filename().string()] = file.path().string(); 
-            }
-       }
-    }
 
     int callback(void *a_param, int argc, char **argv, char **column)
     {
@@ -68,20 +22,19 @@ namespace indexing
         return 0;
     }
 
-    void save_entire_directory_to_sql(const string& dir, sqlite3* &db, int rc, char* &errmsg)
+    void save_entire_directory_to_db(const string& dir, sqlite3* &db, int rc, char* &errmsg)
     {
         
         const char* data = "Callback function called";
-        // sqlite3* db;
-        // int rc = sqlite3_open(sql_filename.c_str(), &db);
+        
         for(const auto& file: directory_iterator(dir))
-       {
+        {
             cout << "INDEXING: " << file.path().string() << endl;
             if(is_directory(file))
             {
                 try
                 {
-                    save_entire_directory_to_sql(file.path().string(), db, rc, errmsg);
+                    save_entire_directory_to_db(file.path().string(), db, rc, errmsg);
 
                 }
                 catch(const filesystem_error& e)
@@ -99,7 +52,7 @@ namespace indexing
                 cout << send << endl;
                 rc = sqlite3_exec(db, send.c_str(), callback, (void*)data, &errmsg);
             }
-       }
+        }
     }
 
     int index_directory_to_db(const string& dir, const string& sql_filename)
@@ -118,7 +71,7 @@ namespace indexing
             cout << "Successfully opened database" << endl;
         }
 
-        string sql = "CREATE    TABLE   FILES(" \
+        string sql = "CREATE    TABLE   IF NOT EXISTS  FILES(" \
                     "FNAME  TEXT    NOT NULL," \
                     "PATH   TEXT    NOT NULL," \
                     "EXT    TEXT    NOT NULL);";
@@ -134,7 +87,7 @@ namespace indexing
             cout << "Table created successfully" << endl;
 
 
-        save_entire_directory_to_sql(dir, db, rc, z_err_msg);
+        save_entire_directory_to_db(dir, db, rc, z_err_msg);
         if (rc != SQLITE_OK)
         {
             cout << "SQL_ERROR" << z_err_msg << endl;
@@ -178,77 +131,121 @@ namespace indexing
             paths.insert(string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0))));
         }
 
-        //sqlite3_free(stmt);
-        //sqlite3_free(ErrMessage);
         sqlite3_close(db);
         return paths;
     }
 
-    map<string, string> read_filenames_from_json(const string& path_to_json_file)
+    void fill_feature_database(const string& dir, const FVectorMaker& vector_maker, const string& lang,  sqlite3* db, int rc, char* errmsg)
     {
-        if (!std::regex_match(path_to_json_file, json_file))
-            throw "Not a .json file";
-        
-        pt::ptree load_ptree_root;
-        map<string, string> filenames_paths;
+        const char* data = "Callback function called";
 
-        try
+        for(const auto& file: directory_iterator(dir))
         {
-            pt::read_json(path_to_json_file, load_ptree_root);
-        }
-        catch(pt::json_parser::json_parser_error e)
-        {
-            cout << "Error while reading .json file" << endl;
-            return filenames_paths;
-        }
-
-        for (auto& filename: load_ptree_root)
-        {
-            filenames_paths[filename.first] = filename.second.data();
-        }
-
-        return filenames_paths;
-
-    }
-
-    map<string, FVector> read_features_from_json(const string& path_to_json_file, size_t dict_size)
-    {
-        if (!std::regex_match(path_to_json_file, json_file))
-            throw "Not a .json file";
-
-        map<string, FVector> result_data;
-
-        pt::ptree load_ptree_root;
-        try
-        {
-            pt::read_json(path_to_json_file, load_ptree_root);
-        }
-        catch (pt::json_parser::json_parser_error)
-        {
-            cout << "Error while reading .json file" << endl;
-            return result_data;
-        }
-
-        for (auto& path: load_ptree_root)
-        {
-            map<size_t, size_t> sparse_vector;
-            for (auto& index: path.second)
+            cout << "INDEXING: " << file.path().string() << endl;
+            if(is_directory(file))
             {
-                auto& value = index.second;
-                sparse_vector[stoi(index.first)] = stoi(value.data());
+                try
+                {
+                    fill_feature_database(file.path().string(), vector_maker, vector_maker.get_lang(), db, rc, errmsg);
+                }
+                catch(const filesystem_error& e)
+                {
+                }
+                
             }
-            FVector temp(sparse_vector, dict_size);
-            result_data[path.first] = temp;
+            else
+            {
+                const string serialized_fvector = vector_maker.make_feature_vector(file.path().string(), 1).serialize();
+                string send = "INSERT INTO FEATURES_"  + lang +  " VALUES ('"  + file.path().string() + "', '" + serialized_fvector + "');"; //
+                rc = sqlite3_exec(db, send.c_str(), callback, (void*)data, &errmsg);
+            }
+        }
+    }
+
+    int index_directory_by_content(const string& dir, const string& sql_filename, const FVectorMaker& vector_maker)
+    {
+        sqlite3* db;
+        int rc = sqlite3_open(sql_filename.c_str(), &db);
+        char* z_err_msg = 0;
+
+        if (rc)
+        {
+            cout << "Can't open the database" << sql_filename << endl;
+            return 1;
+        }
+        else
+        {
+            cout << "Successfully opened database" << endl;
         }
 
-        return result_data;
-    }
-    // Now read from index.json
+        string sql = "CREATE TABLE IF NOT EXISTS FEATURES_" + vector_maker.get_lang() + " (PATH TEXT, FVECTOR_JSON TEXT)";
+        rc = sqlite3_exec(db, sql.c_str(), callback, 0, &z_err_msg);
 
-    vector<string> knn_algorithm(const string& text, const string& path_to_json, const FVectorMaker& maker, size_t k)
+        if (rc != SQLITE_OK)
+        {
+            cout << "SQL_ERROR" << z_err_msg << endl;
+            sqlite3_free(z_err_msg);
+            return 1;
+        }
+        else
+            cout << "Table created successfully" << endl;
+
+
+        fill_feature_database(dir, vector_maker, vector_maker.get_lang(), db, rc, z_err_msg);
+
+        if (rc != SQLITE_OK)
+        {
+            cout << "SQL_ERROR" << z_err_msg << endl;
+            sqlite3_free(z_err_msg);
+        }
+        else
+            cout << "Records created successfully" << endl;
+        
+        sqlite3_close(db);
+        return 0;
+    }
+
+    map<string, FVector> read_features_from_db(const string& db_filename, const string lang)
+    {
+        sqlite3* db;
+        int rc = sqlite3_open(db_filename.c_str(), &db);
+        map<string, FVector> files_features;
+
+        if (rc)
+        {
+            cout << "Can't open the database" << db_filename << endl;
+            return files_features;
+        }
+        else
+        {
+            cout << "Successfully opened database" << endl;
+        }
+
+        string sql_request = "SELECT * FROM FEATURES_" + lang + ";";
+        sqlite3_stmt *stmt;
+        rc = sqlite3_prepare_v2(db, sql_request.c_str(), sql_request.length(), &stmt, nullptr);
+
+        if (rc != SQLITE_OK)
+        {
+            cout << "Can not process the request" << endl;
+            cout << sqlite3_errstr(sqlite3_extended_errcode(db)) << "\n" << sqlite3_errmsg(db) << endl;
+        }
+
+        while ((rc = sqlite3_step(stmt)) == SQLITE_ROW)
+        {
+            string path = string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0)));
+            FVector fvector(string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1))));
+            files_features[path] = fvector;
+        }
+
+        sqlite3_close(db);
+        return files_features;
+    }
+
+    vector<string> knn_algorithm(const string& text, const string& path_to_db, const FVectorMaker& maker, size_t k)
     {
         FVector given_fvector = maker.make_feature_vector(text, 0);
-        map<string, FVector> set_of_vectors = read_features_from_json(path_to_json, maker.get_dict_size());
+        map<string, FVector> set_of_vectors = read_features_from_db(path_to_db, maker.get_lang());
 
         vector<pair<double, string>> distances;
 
@@ -269,27 +266,4 @@ namespace indexing
         }
         return found;
     }
-
-    // bool find_file(const path & dir_path, const std::string & file_name, path& path_found)
-    // {
-    //     if (!exists( dir_path )) 
-    //         return false;
-
-    //     directory_iterator end_itr; // default construction yields past-the-end
-    //     for ( directory_iterator itr( dir_path ); itr != end_itr; ++itr)        
-    //     {
-    //         if (is_directory(itr->status()))
-    //         {
-    //             cout << itr->status() << endl;
-    //             if (find_file(itr->path(), file_name, path_found))
-    //                 return true;
-    //         }
-    //         else if (itr->path().leaf() == file_name) // see below
-    //         {
-    //             path_found = itr->path();
-    //             return true;
-    //         }
-    //     }
-    //     return false;
-    // }
 }
