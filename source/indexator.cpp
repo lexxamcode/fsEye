@@ -23,14 +23,13 @@ int main(int argc, char* argv[])
     const string text_path = "..\\..\\data\\text1.txt";
     //time_t start = time(NULL);
     FVectorMaker en_index_maker(en_dict_path, en_stopwords_path, "en");
-    
-    // //INDEX DIRECTORY BY CONTENT
-    // indexing::index_directory_by_content("D:\\files", "..\\..\\index.db", en_index_maker);
+    //INDEX DIRECTORY BY CONTENT
+    // indexing::index_directory_by_content("D:\\samples", "..\\..\\index.db", en_index_maker);
 
     //FIND BY CONTENT IN DIRECTORY
-    cout << "Enter your request: ";
     while(1)
     {
+        cout << "Enter your request: ";
         string request;
         cin >> request;
         vector<string> found = indexing::knn_algorithm(request, "..\\..\\index.db", en_index_maker, 4);
