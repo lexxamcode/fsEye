@@ -15,6 +15,10 @@ Stemming tools (include/stemming .h files) I took from this repository: https://
    https://github.com/kuba--/zip
    
    https://github.com/zeux/pugixml
+   
+4. Download sqlite3 library (sqlite-amalgamation-3400000.zip)
+
+https://www.sqlite.org/download.html
 4. Download the project:
 ```bash
 git clone https://github.com/lexxamcode/fsEye
@@ -30,6 +34,11 @@ set(DINCLUDE_DIR YOUR_PATH_TO_DUCKX_ROOT/include)
 set(PUGIXMLDIR YOUR_PATH_TO_PUGIXML_ROOT/src)
 set(ZIPDIR YOUR_PATH_TO_ZIP_ROOT/src)
 ```
+# sqlite3 library for working with database
+set(SQLDIR YOUR_PATH_TO_SQLITE)
+include_directories(${SQLDIR})
+link_directories(${SQLDIR})
+
 6. Before building project change one thing in duckx.cpp:
 ![image](https://user-images.githubusercontent.com/82732974/203646559-395e7f61-18b5-46f7-8c23-d4b7c7d4e8a0.png)
 (Hope this issue is solved when someone need this project, but if it's not, just make the change i showed :) )
