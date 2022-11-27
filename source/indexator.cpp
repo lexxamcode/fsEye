@@ -25,20 +25,23 @@ int main(int argc, char* argv[])
     FVectorMaker en_index_maker(en_dict_path, en_stopwords_path, "en");
     
     // //INDEX DIRECTORY BY CONTENT
-    // indexing::index_directory_by_content("D:\\samples", "..\\..\\index.db", en_index_maker);
+    // indexing::index_directory_by_content("D:\\files", "..\\..\\index.db", en_index_maker);
 
     //FIND BY CONTENT IN DIRECTORY
-    // cout << "Enter your request: ";
-    // string request;
-    // cin >> request;
-    // vector<string> found = indexing::knn_algorithm(request, "..\\..\\index.db", en_index_maker, 4);
-    // cout << found.size() << endl;
-    // for (auto& file: found)
-    //     cout << file << endl;
+    cout << "Enter your request: ";
+    while(1)
+    {
+        string request;
+        cin >> request;
+        vector<string> found = indexing::knn_algorithm(request, "..\\..\\index.db", en_index_maker, 4);
+        cout << found.size() << endl;
+        for (auto& file: found)
+            cout << file << endl;
+    }
 
     //INDEX DIRECTORY
-    cout << "Indexing Samples" << endl;
-    indexing::index_directory_to_db("D:\\", "..\\..\\index.db");
+    // cout << "Indexing Samples" << endl;
+    // indexing::index_directory_to_db("D:\\", "..\\..\\index.db");
 
     // FIND IN DIRECTORY:
     // while(true)

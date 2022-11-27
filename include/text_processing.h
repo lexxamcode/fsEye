@@ -95,7 +95,7 @@ namespace test
 namespace textProcessing
 {
     const std::string stop_symbols = " \n\t.,/\\=+_-<>?'\":;'[]{}!@#$%^&*№1234567890";
-    const std::regex txt_file("(.*?)(\.txt)|(.*?)(\.dat)|(.*?)(\.rtf)");
+    const std::regex txt_file("(.*?)(\.txt)|(.*?)(\.rtf)");
     const std::regex doc_file("(.*?)(\.doc)|(.*?)(\.docx)");
 
     using namespace boost::iostreams;
@@ -139,6 +139,8 @@ namespace textProcessing
     std::vector<std::string> text_to_vector(const std::string& path, stemming::stem<>* stemmer)
     {
         std::vector<std::string> words;
+
+        
 
         if (std::regex_match(path, txt_file))
         {

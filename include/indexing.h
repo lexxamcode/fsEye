@@ -71,11 +71,11 @@ namespace indexing
             cout << "Successfully opened database" << endl;
         }
 
-        string sql = "CREATE    TABLE   IF NOT EXISTS  FILES(" \
+        string create = "CREATE    TABLE   IF NOT EXISTS  FILES(" \
                     "FNAME  TEXT    NOT NULL," \
                     "PATH   TEXT    NOT NULL," \
                     "EXT    TEXT    NOT NULL);";
-        rc = sqlite3_exec(db, sql.c_str(), callback, 0, &z_err_msg);
+        rc = sqlite3_exec(db, create.c_str(), callback, 0, &z_err_msg);
 
         if (rc != SQLITE_OK)
         {
@@ -86,7 +86,9 @@ namespace indexing
         else
             cout << "Table created successfully" << endl;
 
-
+        sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL, &z_err_msg);
+        sqlite3_exec(db, "PRAGMA synchronous = OFF", NULL, NULL, &z_err_msg);
+        sqlite3_exec(db, "PRAGMA journal_mode = MEMORY", NULL, NULL, &z_err_msg);
         save_entire_directory_to_db(dir, db, rc, z_err_msg);
         if (rc != SQLITE_OK)
         {
@@ -96,6 +98,7 @@ namespace indexing
         else
             cout << "Records created successfully" << endl;
         
+        sqlite3_exec(db, "END TRANSACTION", nullptr, nullptr, &z_err_msg);
         sqlite3_close(db);
         return 0;
     }
@@ -141,7 +144,6 @@ namespace indexing
 
         for(const auto& file: directory_iterator(dir))
         {
-            cout << "INDEXING: " << file.path().string() << endl;
             if(is_directory(file))
             {
                 try
@@ -155,9 +157,14 @@ namespace indexing
             }
             else
             {
-                const string serialized_fvector = vector_maker.make_feature_vector(file.path().string(), 1).serialize();
-                string send = "INSERT INTO FEATURES_"  + lang +  " VALUES ('"  + file.path().string() + "', '" + serialized_fvector + "');"; //
-                rc = sqlite3_exec(db, send.c_str(), callback, (void*)data, &errmsg);
+
+                if ((regex_match(file.path().string(), txt_file) || regex_match(file.path().string(), doc_file)) && (file_size(file.path().string()) > 0))
+                {
+                    cout << "INDEXING: " << file.path().string() << endl;
+                    const string serialized_fvector = vector_maker.make_feature_vector(file.path().string(), 1).serialize();
+                    string send = "INSERT INTO FEATURES_"  + lang +  " VALUES ('"  + file.path().string() + "', '" + serialized_fvector + "');"; //
+                    rc = sqlite3_exec(db, send.c_str(), callback, (void*)data, &errmsg);
+                }
             }
         }
     }
@@ -190,7 +197,9 @@ namespace indexing
         else
             cout << "Table created successfully" << endl;
 
-
+        sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL, &z_err_msg);
+        sqlite3_exec(db, "PRAGMA synchronous = OFF", NULL, NULL, &z_err_msg);
+        sqlite3_exec(db, "PRAGMA journal_mode = MEMORY", NULL, NULL, &z_err_msg);
         fill_feature_database(dir, vector_maker, vector_maker.get_lang(), db, rc, z_err_msg);
 
         if (rc != SQLITE_OK)
@@ -201,6 +210,7 @@ namespace indexing
         else
             cout << "Records created successfully" << endl;
         
+        sqlite3_exec(db, "END TRANSACTION", nullptr, nullptr, &z_err_msg);
         sqlite3_close(db);
         return 0;
     }
