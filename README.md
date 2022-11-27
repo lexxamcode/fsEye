@@ -45,6 +45,10 @@ link_directories(${SQLDIR})
 ![image](https://user-images.githubusercontent.com/82732974/203646559-395e7f61-18b5-46f7-8c23-d4b7c7d4e8a0.png)
 (Hope this issue is solved when someone need this project, but if it's not, just make the change i showed :) )
 
+And this one in miniz.h if duckx does not open files with cyrillic symbols in their paths:
+![image](https://user-images.githubusercontent.com/82732974/204142792-77feb10a-f604-4441-a786-ad9629e77723.png)
+
+
 8. Now build the project:
 ```bash
 mkdir build
