@@ -262,8 +262,11 @@ namespace indexing
         for (auto& it: set_of_vectors)
         {
             double distance = correlation(it.second, given_fvector);
-            pair<double, string> dist_path(distance, it.first);
-            distances.push_back(dist_path);
+            if (!isnan(distance))
+            {
+                pair<double, string> dist_path(distance, it.first);
+                distances.push_back(dist_path);
+            }
         }
 
         sort(distances.begin(), distances.end());

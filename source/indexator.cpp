@@ -24,8 +24,11 @@ int main(int argc, char* argv[])
     //time_t start = time(NULL);
     FVectorMaker en_index_maker(en_dict_path, en_stopwords_path, "en");
     //INDEX DIRECTORY BY CONTENT
-    // indexing::index_directory_by_content("D:\\samples", "..\\..\\index.db", en_index_maker);
-
+    // time_t start = time(NULL);
+    // indexing::index_directory_by_content("D:\\", "..\\..\\index.db", en_index_maker);
+    // time_t time_end = time(NULL) - start;
+    // cout << "Indexed in " << time_end << " seconds" << endl;
+    
     //FIND BY CONTENT IN DIRECTORY
     while(1)
     {

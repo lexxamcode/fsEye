@@ -144,30 +144,38 @@ namespace textProcessing
 
         if (std::regex_match(path, txt_file))
         {
-            mapped_file fmap(path, mapped_file::readonly);
-            auto f = fmap.const_data();
-            auto l = f + fmap.size();
-
-            std::string word;
-            while(f && f !=l)
+            try
             {
-                if (!trash_symbol(*f))
-                    word.push_back(tolower(*f));
-                else
-                {
-                    if (!word.empty())
-                    {
-                        stem_word(word, stemmer);
-                        words.push_back(word);
-                        word.erase();
-                    }
-                }
-                f++;
-            }
-            if (!word.empty())
-                words.push_back(word);
+                mapped_file fmap(path, mapped_file::readonly);
 
-            return words;
+                auto f = fmap.const_data();
+                auto l = f + fmap.size();
+
+                 std::string word;
+                while(f && f !=l)
+                {
+                    if (!trash_symbol(*f))
+                        word.push_back(tolower(*f));
+                    else
+                    {
+                        if (!word.empty())
+                        {
+                            stem_word(word, stemmer);
+                            words.push_back(word);
+                            word.erase();
+                        }
+                    }
+                    f++;
+                }
+                if (!word.empty())
+                    words.push_back(word);
+
+                return words;
+            }
+            catch (boost::wrapexcept<std::ios_base::failure>)
+            {
+                return words;
+            }
         }
         else if (std::regex_match(path, doc_file))
         {
