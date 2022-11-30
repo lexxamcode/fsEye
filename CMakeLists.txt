@@ -6,8 +6,8 @@ set(CMAKE_CXX_STANDART 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Boost root and libraries directories are being set here
-set(Boost_INCLUDE_DIR D:/codeprojects/boost_1_80_0)
-set(Boost_LIBRARY_DIR D:/codeprojects/boost_1_80_0/stage/lib)
+set(Boost_INCLUDE_DIR C:/files/frameworks_and_libs/boost_1_80_0/boost_1_80_0)
+set(Boost_LIBRARY_DIR C:/files/frameworks_and_libs/boost_1_80_0/boost_1_80_0/stage/lib)
 find_package(Boost 1.80.0 REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIR})
@@ -15,12 +15,12 @@ link_directories(${Boost_LIBRARY_DIR})
 # DuckX library for doc/docx file processing
 set(INCLUDE_DIR include)
 set(DATA_DIR data)
-set(DINCLUDE_DIR D:/codeprojects/DuckX/include)
-set(PUGIXMLDIR D:/codeprojects/pugixml/src)
-set(ZIPDIR D:/codeprojects/zip/src)
+set(DINCLUDE_DIR C:/files/frameworks_and_libs/DuckX/include)
+set(PUGIXMLDIR C:/files/frameworks_and_libs/pugixml/src)
+set(ZIPDIR C:/files/frameworks_and_libs/zip/src)
 
 # SQLLite API connection
-set(SQLDIR D:/codeprojects/sqlite-amalgamation-3400000)
+set(SQLDIR C:/files/frameworks_and_libs/sqlite-amalgamation-3400000)
 include_directories(${SQLDIR})
 link_directories(${SQLDIR})
 

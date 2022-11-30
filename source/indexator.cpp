@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
     {
         cout << "Enter your request: ";
         string request;
-        cin >> request;
+        getline(cin, request);
         vector<string> found = indexing::knn_algorithm(request, "..\\..\\index.db", en_index_maker, 4);
         cout << found.size() << endl;
         for (auto& file: found)
