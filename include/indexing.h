@@ -273,7 +273,7 @@ namespace indexing
 
         vector<string> found;
 
-        for (int i = distances.size() - 1; i >= distances.size() - k; i--)
+        for (int i = distances.size() - 1; (i >= distances.size() - k) && (i >= 0); i--)
         {
             found.push_back(distances[i].second);
         }
