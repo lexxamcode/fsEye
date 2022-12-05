@@ -1,5 +1,5 @@
 #include "boost/filesystem.hpp"
-
+#include <omp.h>
 #include "../source/headers/FVectorMaker.h"
 
 #include <sqlite3.h>
@@ -138,7 +138,7 @@ namespace indexing
         return paths;
     }
 
-    void fill_feature_database(const string& dir, const FVectorMaker& vector_maker, const string& lang,  sqlite3* db, int rc, char* errmsg)
+    void fill_feature_database(const string& dir, const vector<FVectorMaker*>& vector_makers, sqlite3* db, int rc, char* errmsg)
     {
         const char* data = "Callback function called";
 
@@ -148,7 +148,7 @@ namespace indexing
             {
                 try
                 {
-                    fill_feature_database(file.path().string(), vector_maker, vector_maker.get_lang(), db, rc, errmsg);
+                    fill_feature_database(file.path().string(), vector_makers, db, rc, errmsg);
                 }
                 catch(const filesystem_error& e)
                 {
@@ -160,20 +160,69 @@ namespace indexing
 
                 if ((regex_match(file.path().string(), txt_file) || regex_match(file.path().string(), doc_file)) && (file_size(file.path().string()) > 0))
                 {
+                    map<string, string> feature_vectors;
                     cout << "INDEXING: " << file.path().string() << endl;
-                    const string serialized_fvector = vector_maker.make_feature_vector(file.path().string(), 1).serialize();
-                    string send = "INSERT INTO FEATURES_"  + lang +  " VALUES ('"  + file.path().string() + "', '" + serialized_fvector + "');"; //
+
+                    #pragma omp parallel
+                    {
+                        #pragma omp for
+                        for (auto& maker: vector_makers)
+                        {
+                            const string serialized_fvector = maker->make_feature_vector(file.path().string(), 1).serialize();
+                            feature_vectors[maker->get_lang()] = serialized_fvector;
+                        }
+                    }
+                    
+                    string send = "INSERT INTO FEATURES (PATH,";
+                    for (auto& fvector: feature_vectors)
+                    {
+                        send += " FVECTOR_" + fvector.first + ",";
+                    }
+                    if (!send.empty())
+                        send.resize(send.size() - 1);
+
+                    send += ") VALUES ('" + file.path().string() + "', ";
+                    for (auto& fvector: feature_vectors)
+                    {
+                        send += "'" + fvector.second + "', ";
+                    }
+                    if (!send.empty())
+                        send.resize(send.size() - 2);
+                    send += ");";
+
+
                     rc = sqlite3_exec(db, send.c_str(), callback, (void*)data, &errmsg);
                 }
             }
         }
     }
 
-    int index_directory_by_content(const string& dir, const string& sql_filename, const FVectorMaker& vector_maker)
+    int index_directory_by_content(const string& dir, const string& sql_filename)
     {
         sqlite3* db;
         int rc = sqlite3_open(sql_filename.c_str(), &db);
         char* z_err_msg = 0;
+
+        //CREATE FEATURE MAKERS
+        vector<FVectorMaker*> vector_makers;
+        vector<string> languages = {"en", "ru"};
+
+        time_t start = time(NULL);
+        cout << "Creating vector makers...";
+        #pragma omp parallel
+        {
+            #pragma omp for
+            for (auto& language: languages)
+            {
+                string dict = "..\\..\\data\\dictionaries\\" + language + "_dictionary.txt";
+                string stopwords = "..\\..\\data\\stopwords\\" + language + "_stopwords.txt";
+                FVectorMaker* temp = new FVectorMaker(dict, stopwords, language);
+                vector_makers.push_back(temp);
+            }
+        }
+        time_t end = time(NULL) - start;
+        cout << "Created vector makers " << end << "sec" << endl;
+        //
 
         if (rc)
         {
@@ -185,7 +234,17 @@ namespace indexing
             cout << "Successfully opened database" << endl;
         }
 
-        string sql = "CREATE TABLE IF NOT EXISTS FEATURES_" + vector_maker.get_lang() + " (PATH TEXT, FVECTOR_JSON TEXT)";
+        string sql = "CREATE TABLE IF NOT EXISTS FEATURES (PATH TEXT, ";
+        for (auto& fvector: vector_makers)
+        {
+            sql += "FVECTOR_" + fvector->get_lang() + " TEXT,";
+        }
+
+        if (!sql.empty())
+            sql.resize(sql.size() - 1);
+
+        sql += ");";
+
         rc = sqlite3_exec(db, sql.c_str(), callback, 0, &z_err_msg);
 
         if (rc != SQLITE_OK)
@@ -200,7 +259,8 @@ namespace indexing
         sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL, &z_err_msg);
         sqlite3_exec(db, "PRAGMA synchronous = OFF", NULL, NULL, &z_err_msg);
         sqlite3_exec(db, "PRAGMA journal_mode = MEMORY", NULL, NULL, &z_err_msg);
-        fill_feature_database(dir, vector_maker, vector_maker.get_lang(), db, rc, z_err_msg);
+
+        fill_feature_database(dir, vector_makers, db, rc, z_err_msg);
 
         if (rc != SQLITE_OK)
         {
@@ -212,6 +272,8 @@ namespace indexing
         
         sqlite3_exec(db, "END TRANSACTION", nullptr, nullptr, &z_err_msg);
         sqlite3_close(db);
+        for (auto& maker: vector_makers)
+            delete maker;
         return 0;
     }
 
@@ -231,7 +293,7 @@ namespace indexing
             cout << "Successfully opened database" << endl;
         }
 
-        string sql_request = "SELECT * FROM FEATURES_" + lang + ";";
+        string sql_request = "SELECT * FROM FEATURES;";
         sqlite3_stmt *stmt;
         rc = sqlite3_prepare_v2(db, sql_request.c_str(), sql_request.length(), &stmt, nullptr);
 
@@ -254,6 +316,30 @@ namespace indexing
 
     vector<string> knn_algorithm(const string& text, const string& path_to_db, const FVectorMaker& maker, size_t k)
     {
+        //CREATE FEATURE MAKERS
+        vector<FVectorMaker*> vector_makers;
+        vector<string> languages = {"en", "ru"};
+
+        time_t start = time(NULL);
+        cout << "Creating vector makers...";
+        #pragma omp parallel
+        {
+            #pragma omp for
+            for (auto& language: languages)
+            {
+                string dict = "..\\..\\data\\dictionaries\\" + language + "_dictionary.txt";
+                string stopwords = "..\\..\\data\\stopwords\\" + language + "_stopwords.txt";
+                FVectorMaker* temp = new FVectorMaker(dict, stopwords, language);
+                vector_makers.push_back(temp);
+            }
+        }
+        time_t end = time(NULL) - start;
+        cout << "Created vector makers " << end << "sec" << endl;
+        //
+        //Получить все вектора для запроса
+        //Сравнить вектора запроса с векторами в БД
+        // --Параллельно--
+        //Несколько дистанций
         FVector given_fvector = maker.make_feature_vector(text, 0);
         map<string, FVector> set_of_vectors = read_features_from_db(path_to_db, maker.get_lang());
 

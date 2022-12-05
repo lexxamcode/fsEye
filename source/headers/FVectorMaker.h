@@ -171,31 +171,13 @@ class FVectorMaker
             _lang = language;
             if (_lang.size() != 2) // must be two symbols: "en", "ru", "fr" etc.
                 throw - 1;
-            
-            int start = time(NULL);
+
             set_stemmer();
-            int end = time(NULL) - start;
-            cout << "Setting stemmer: " << end << " seconds" << endl;
-
-            start = time(NULL);
             _dictionary = text_to_vector(init_dict_path, _stemmer);
-            end = time(NULL) - start;
-            cout << "Loading dictionary: " << end << " seconds" << endl;
-
-            start = time(NULL);
             _stopwords = text_to_uset(init_stopwords_path, _stemmer);
-            end = time(NULL) - start;
-            cout << "Loading stopwords: " << end << " seconds" << endl;
-
-            start = time(NULL);
             clear_dict_from_stopwords();
-            end = time(NULL) - start;
-            cout << "Clearing dictionary from stopwords: " << end << " seconds" << endl;
-
-            start = time(NULL);
             clear_dict_from_identical();
-            end = time(NULL) - start;
-            cout << "Removing identical from dictionary: " << end << " seconds" << endl;
+
         }
     public:
         /*
@@ -217,6 +199,10 @@ class FVectorMaker
                 spanish es
                 swedish se
         */
+        FVectorMaker()
+        {
+            _lang = "";
+        }
         FVectorMaker(const string& init_dict_path, const string& init_stopwords_path, const string& language)
         {
             

@@ -1,7 +1,27 @@
-Though the index and search were split into their own fields, they share similar parameters. Search for “abc” and the index will look for all files with a matching key. In the indexing section, the two features share some of the same criteria, although the indexing app does a better job of finding files than the search.
+Yet, when we drill down, we find that the initial index is only a subset of all the text files of the collection, and represents only some of the files at first. These files also need indexing (although for each file the index needs to be specific to that file).
 
-Windows Search does not have the advantage of integration with Windows 8 or Windows Phone 8 apps, so developers and end users wanting a single search feature will have to use alternative solutions (such as TextMate and Jetstream, for example).
+Take a sample of some of the files in our sample collection. You can use the following script to create an index
 
-Unlike in other apps, Windows Search cannot share data between databases or file types, and the search feature uses the Windows Search index, which is not the most flexible database system. Windows Search only supports searching files or other indexed objects in the same folder, or files inside the current folder.
+import json def index_file_index ( file , index_file_index_filename ) file = file . replace ( _index_file_file_index_filename , index_file_index_filename ) for text in file  key = text . split ( ''' ). split ( '-' ) file = json . load ( key ) index_file_index_filename += json . load ( file ) return index_file_index_filename , index_file_index_filename
 
-Unlike the Windows 8 Mobile apps (such as Groove Music or Microsoft Word Mobile), the Windows Search app requires
+This script can then be used to index other files, but once the index has been created, the database can only deal with the initial file.
+
+This is why text files end up being the most widely used index files, followed by files containing links (e.g. HTML links) and files containing text files (e.g. HTML text documents).
+
+Within NeoPenguin, we also have some other indexing files text_links.txt, text_texts.txt and text_texts_statistics.txt. These three files store some of the statistical information of all the text files in our collection. You can run the following script to create the index
+
+import json def index_text_links_index_file_index_filename ( file , index_text_links_index_filename_filename ) file = file . replace ( _index_text_links_index_file_index_filename , index_text_links_index_filename_filename ) for text in file  key = text . split ( ''' ). split ( '-' ) file = json . load ( key ) index_text_links_index_filename += json . load ( file ) return index_text_links_index_filename , index_text_links_index_filename_filename_filename_filename , index_text_links_index_filename_filename_filename_filename_filename_filename
+
+This script can also be used to index text files and text links
+
+import json def index_text_text_links_index_file_index_filename_file_index_filename_filename e.t.c Now let's start with the text file index. Create an index file. Create a new text file with some text and save it to the index.
+
+If you have a file containing all the text files of your collection, you can then simply add the index file to your indexing profile, which will automatically add the index to your database.
+
+Implementing an Index
+
+We have shown that the simplest way to index text files (and thus store them in the database) is to use the index files created in the previous step. This process works very well, but it is not the best way to store information.
+
+We know from the introduction that most of the text files in our collection don't have a text index file (or any other index files). This indicates that the text files have a simple schema, and they are not being indexed by a search engine. In other words, our text files are not a good index file for us.
+
+In fact, the text files in our collection are not indexed in such a way. The text files are just being indexed by the database (or, at
