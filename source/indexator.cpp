@@ -8,7 +8,7 @@ int main(int argc, char* argv[])
     //time_t start = time(NULL);
     //INDEX DIRECTORY BY CONTENT
     // time_t start = time(NULL);
-    indexing::index_directory_by_content("D:\\samples", "..\\..\\index.db");
+    indexing::index_directory_by_content("C:\\files\\kursa4\\test documents", "..\\..\\index.db");
     // time_t time_end = time(NULL) - start;
     // cout << "Indexed in " << time_end << " seconds" << endl;
     

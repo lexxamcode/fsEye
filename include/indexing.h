@@ -22,6 +22,34 @@ namespace indexing
         return 0;
     }
 
+    vector<FVectorMaker*> create_vector_makers()
+    {
+        //CREATE FEATURE MAKERS
+
+        vector<string> languages = {"en", "ru"};// languages of texts being vectorized
+
+        vector<FVectorMaker*> vector_makers;
+        vector_makers.reserve(languages.size());
+
+        time_t start = time(NULL);
+        cout << "Creating vector makers...";
+        int threads = omp_get_thread_num();
+        #pragma omp parallel for num_threads(threads)
+        for (auto& language: languages)
+        {
+            string dict = "..\\..\\data\\dictionaries\\" + language + "_dictionary.txt";
+            string stopwords = "..\\..\\data\\stopwords\\" + language + "_stopwords.txt";
+            FVectorMaker* temp = new FVectorMaker(dict, stopwords, language);
+            vector_makers.push_back(temp);
+        }
+        
+        time_t end = time(NULL) - start;
+        cout << "Created vector makers " << end << "sec" << endl;
+        //
+
+        return vector_makers;
+    }
+
     void save_entire_directory_to_db(const string& dir, sqlite3* &db, int rc, char* &errmsg)
     {
         
@@ -203,26 +231,7 @@ namespace indexing
         int rc = sqlite3_open(sql_filename.c_str(), &db);
         char* z_err_msg = 0;
 
-        //CREATE FEATURE MAKERS
-        vector<FVectorMaker*> vector_makers;
-        vector<string> languages = {"en", "ru"};
-
-        time_t start = time(NULL);
-        cout << "Creating vector makers...";
-        #pragma omp parallel
-        {
-            #pragma omp for
-            for (auto& language: languages)
-            {
-                string dict = "..\\..\\data\\dictionaries\\" + language + "_dictionary.txt";
-                string stopwords = "..\\..\\data\\stopwords\\" + language + "_stopwords.txt";
-                FVectorMaker* temp = new FVectorMaker(dict, stopwords, language);
-                vector_makers.push_back(temp);
-            }
-        }
-        time_t end = time(NULL) - start;
-        cout << "Created vector makers " << end << "sec" << endl;
-        //
+        vector<FVectorMaker*> vector_makers = create_vector_makers();
 
         if (rc)
         {
@@ -277,11 +286,13 @@ namespace indexing
         return 0;
     }
 
-    map<string, FVector> read_features_from_db(const string& db_filename, const string lang)
+    map<string, vector<pair<string, FVector>>> read_features(const string& db_filename)
     {
+        vector<string> languages = {"en", "ru"};
+
         sqlite3* db;
         int rc = sqlite3_open(db_filename.c_str(), &db);
-        map<string, FVector> files_features;
+        map<string, vector<pair<string,FVector>>> files_features;
 
         if (rc)
         {
@@ -306,15 +317,21 @@ namespace indexing
         while ((rc = sqlite3_step(stmt)) == SQLITE_ROW)
         {
             string path = string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0)));
-            FVector fvector(string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1))));
-            files_features[path] = fvector;
+            vector<pair<string, FVector>> path_fvectors;
+            for (int i = 0; i < languages.size(); i++)
+            {
+                FVector fvector(string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, i+1))));
+                pair<string, FVector> lang_fvector(languages[i], fvector);
+                path_fvectors.push_back(lang_fvector);
+            }
+            files_features[path] = path_fvectors;
         }
 
         sqlite3_close(db);
         return files_features;
     }
 
-    vector<string> knn_algorithm(const string& text, const string& path_to_db, const FVectorMaker& maker, size_t k)
+    vector<string> knn_algorithm(const string& text, const string& path_to_db, map<string, double> weights, size_t k)
     {
         //CREATE FEATURE MAKERS
         vector<FVectorMaker*> vector_makers;
@@ -322,35 +339,41 @@ namespace indexing
 
         time_t start = time(NULL);
         cout << "Creating vector makers...";
-        #pragma omp parallel
+
+        #pragma omp parallel for num_threads(omp_get_thread_num())
+        for (auto& language: languages)
         {
-            #pragma omp for
-            for (auto& language: languages)
-            {
-                string dict = "..\\..\\data\\dictionaries\\" + language + "_dictionary.txt";
-                string stopwords = "..\\..\\data\\stopwords\\" + language + "_stopwords.txt";
-                FVectorMaker* temp = new FVectorMaker(dict, stopwords, language);
-                vector_makers.push_back(temp);
-            }
+            string dict = "..\\..\\data\\dictionaries\\" + language + "_dictionary.txt";
+            string stopwords = "..\\..\\data\\stopwords\\" + language + "_stopwords.txt";
+            FVectorMaker* temp = new FVectorMaker(dict, stopwords, language);
+            vector_makers.push_back(temp);
         }
+        
         time_t end = time(NULL) - start;
         cout << "Created vector makers " << end << "sec" << endl;
         //
+
         //Получить все вектора для запроса
         //Сравнить вектора запроса с векторами в БД
         // --Параллельно--
         //Несколько дистанций
-        FVector given_fvector = maker.make_feature_vector(text, 0);
-        map<string, FVector> set_of_vectors = read_features_from_db(path_to_db, maker.get_lang());
+
+        map<string, FVector> features_of_request;
+        #pragma omp parallel for num_threads(omp_get_thread_num())
+        for (auto& maker: vector_makers)
+        {
+            features_of_request[maker->get_lang()] = maker->make_feature_vector(text, 0);
+        }
+        map<string, vector<pair<string, FVector>>> saved = read_features(path_to_db);
 
         vector<pair<double, string>> distances;
 
-        for (auto& it: set_of_vectors)
+        for (auto& file: saved)
         {
-            double distance = correlation(it.second, given_fvector);
+            double distance = 0;
             if (!isnan(distance))
             {
-                pair<double, string> dist_path(distance, it.first);
+                pair<double, string> dist_path(distance, file.first);
                 distances.push_back(dist_path);
             }
         }
