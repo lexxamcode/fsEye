@@ -1,7 +1,6 @@
 #include "boost/filesystem.hpp"
 #include <omp.h>
 #include "../source/headers/FVectorMaker.h"
-
 #include <sqlite3.h>
 
 namespace indexing
@@ -22,11 +21,9 @@ namespace indexing
         return 0;
     }
 
-    vector<FVectorMaker*> create_vector_makers()
+    vector<FVectorMaker*> create_vector_makers(const vector<string> languages)
     {
         //CREATE FEATURE MAKERS
-
-        vector<string> languages = {"en", "ru"};// languages of texts being vectorized
 
         vector<FVectorMaker*> vector_makers;
         vector_makers.reserve(languages.size());
@@ -225,13 +222,13 @@ namespace indexing
         }
     }
 
-    int index_directory_by_content(const string& dir, const string& sql_filename)
+    int index_directory_by_content(const string& dir, const string& sql_filename, vector<string> languages)
     {
         sqlite3* db;
         int rc = sqlite3_open(sql_filename.c_str(), &db);
         char* z_err_msg = 0;
 
-        vector<FVectorMaker*> vector_makers = create_vector_makers();
+        vector<FVectorMaker*> vector_makers = create_vector_makers(languages);
 
         if (rc)
         {
