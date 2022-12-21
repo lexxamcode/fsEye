@@ -113,9 +113,11 @@
             string request;
             string directory;
 
-
+            vector<string> languages;
             vector<string> results;
+            vector<FVectorMaker*> feature_makers;
 
+            bool show_request_error;
             bool show_results;
             bool show_settings;
             bool done;
@@ -127,12 +129,15 @@
         public:
             fsWindow()
             {
+                // Load feature_makers
+                languages = {"en", "ru"};
+                feature_makers = indexing::create_vector_makers(languages);
 
                 // Create application window
                 //ImGui_ImplWin32_EnableDpiAwareness();
-                wc = { sizeof(wc), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, L"ImGui Example", NULL };
+                wc = { sizeof(wc), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, L"fsEye", NULL };
                 ::RegisterClassExW(&wc);
-                hwnd = ::CreateWindowW(wc.lpszClassName, L"000", WS_OVERLAPPED | WS_SYSMENU, 100, 100, 800, 600, NULL, NULL, wc.hInstance, NULL);
+                hwnd = ::CreateWindowW(wc.lpszClassName, L"fsEye", WS_OVERLAPPEDWINDOW, 100, 100, 800, 600, NULL, NULL, wc.hInstance, NULL);
 
                  // Initialize Direct3D
                 if (!CreateDeviceD3D(hwnd))
@@ -176,6 +181,7 @@
                 ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
 
                 // Our state
+                show_request_error = false;
                 show_settings = false;
                 show_results = true;
                 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
@@ -200,8 +206,15 @@
                     // Poll and handle messages (inputs, window resize, etc.)
                     // See the WndProc() function below for our to dispatch events to the Win32 backend.
                     MSG msg;
-                    
-
+                    while (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE))
+                    {
+                            ::TranslateMessage(&msg);
+                            ::DispatchMessage(&msg);
+                            if (msg.message == WM_QUIT)
+                                done = true;
+                    }
+                    if (done)
+                        break;
                     // Start the Dear ImGui frame
                     ImGui_ImplDX11_NewFrame();
                     ImGui_ImplWin32_NewFrame();
@@ -213,8 +226,8 @@
 
                     // SEARCH WINDOW
                     {
-
-                        ImGui::Begin("fsEye", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);   // Create a window called "fsEye" and append into it.
+                        ImGui::SetNextWindowSize(ImVec2(250, 400), ImGuiCond_FirstUseEver);
+                        ImGui::Begin("fsEye");   // Create a window called "fsEye" and append into it.
 
                         ImGui::InputText("##", &request);               // Display some text (you can use a format strings too)
                         //ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
@@ -222,8 +235,28 @@
                         ImGui::SameLine();
                         if (ImGui::Button("Search") && request.size())                            // Buttons return true when clicked (most widgets return true when edited/activated)
                         {
-                            
+                            string arg = request;
+                            if (arg.rfind("content:", 0) == 0)
+                            {
+                                arg.erase(0, 8);
+                                results = indexing::knn_algorithm(arg, "..\\..\\index.db", 10, feature_makers);
+                                cout << arg << endl;
+                                for (auto& it: results)
+                                    cout << it << endl;
+                            }
+                            if (arg.rfind("name:", 0) == 0)
+                            {
+                                arg.erase(0, 5);
+                                results = indexing::find_in_db(arg, "..\\..\\index.db");
+                            }
+                            else
+                            {
+                                show_request_error = true;
+                            }
                         }
+                        ImGui::SameLine();
+                        ImGui::Text("found: %d", results.size());
+
                         if (ImGui::Button("Settings"))
                             show_settings = !show_settings;
 
@@ -237,13 +270,13 @@
                     {   
                         ImGui::Begin("Settings", &show_settings);
                         ImGui::InputText("Directory", &directory);
-                        if (ImGui::Button("Index"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+                        if (ImGui::Button("Index") && directory.size())                            // Buttons return true when clicked (most widgets return true when edited/activated)
                         {
-                            
+                            indexing::index_directory_to_db(directory, "..\\..\\index.db");
                         }
-                        if (ImGui::Button("Index by content") && request.size())                            // Buttons return true when clicked (most widgets return true when edited/activated)
+                        if (ImGui::Button("Index by content") && directory.size())                            // Buttons return true when clicked (most widgets return true when edited/activated)
                         {
-                            
+                            indexing::index_directory_by_content(directory, "..\\..\\index.db", languages);
                         }
                         ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
                         
@@ -253,26 +286,37 @@
                     }
 
                     // RESULTS WINDOW
-                    if (show_results)
-                    {
-                        ImGui::Begin("Show results", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
+                    // if (show_results)
+                    // {
+                    //     ImGui::TextColored(ImVec4(1,1,0,1), "Important Stuff");
+                    //     ImGui::BeginChild("Scrolling");
+                    //     if (results.size())
+                    //         for (int n = 0; n < results.size(); n++)
+                    //             ImGui::Text("%s: Some text", n);
+                    //     ImGui::EndChild();
+                    // }
 
-                        if (ImGui::BeginTable("Results", 3))
+                    // ERROR MESSAGE
+                    if (show_request_error)
                         {
-                            for (int row = 0; row < 4; row++)
-                            {
-                                ImGui::TableNextRow();
-                                for (int column = 0; column < 3; column++)
-                                {
-                                    ImGui::TableSetColumnIndex(column);
-                                    ImGui::Text("Row %d Column %d", row, column);
-                                }
-                            }
-                            ImGui::EndTable();
-                        }
+                        ImGui::Begin("Request error");
 
+                        ImGui::Text("Wrong request parametr.\n Use name:[request] to find file by name,\nUse content:[request] to find file by content");
+                        if (ImGui::Button("Close"))
+                            show_request_error = false;
                         ImGui::End();
                     }
+
+                   if (results.size())
+                   {
+                        ImGui::Begin("Results");
+                        ImGui::TextColored(ImVec4(1, 1, 0, 1), "Found files: ");
+                        ImGui::BeginChild("Scrolling");
+                        for (size_t i = 0; i < results.size(); i++)
+                            ImGui::Text("%s", results[i].c_str());
+                        ImGui::EndChild();
+                        ImGui::End();
+                   }
 
                     // Rendering
                     ImGui::Render();

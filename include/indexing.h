@@ -128,11 +128,11 @@ namespace indexing
         return 0;
     }
 
-    unordered_set<string> find_in_db(const string& request, const string& sql_filename)
+    vector<string> find_in_db(const string& request, const string& sql_filename)
     {
         sqlite3* db;
         int rc = sqlite3_open(sql_filename.c_str(), &db);
-        unordered_set<string> paths;
+        vector<string> paths;
 
         if (rc)
         {
@@ -156,7 +156,7 @@ namespace indexing
 
         while ((rc = sqlite3_step(stmt)) == SQLITE_ROW)
         {
-            paths.insert(string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0))));
+            paths.push_back(string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0))));
         }
 
         sqlite3_close(db);
@@ -351,19 +351,20 @@ namespace indexing
             double summarized_distance = 0;
             for (auto& lang : file.second)
             {    
-                cout << lang.first << " : " << intersection(features_of_request[lang.first], loaded[file.first][lang.first]) << endl;
+                //cout << lang.first << " : " << intersection(features_of_request[lang.first], loaded[file.first][lang.first]) << endl;
+                summarized_distance += intersection(features_of_request[lang.first], loaded[file.first][lang.first]);
             }
             pair<double, string> path_distance(summarized_distance, file.first);
             distances.push_back(path_distance);
         }
-
         sort(distances.begin(), distances.end());
 
         vector<string> found;
 
-        for (int i = distances.size() - 1; (i >= distances.size() - k) && (i >= 0); i--)
+        for (int i = distances.size() - 1; (i >= (int)(distances.size()) - (int)(k)) && (i >= 0); i--)
         {
             found.push_back(distances[i].second);
+            cout << distances[i].second << " : " << distances[i].first << endl;
         }
         return found;
     }

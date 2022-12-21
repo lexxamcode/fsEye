@@ -8,6 +8,9 @@
 // Main code
 int main(int, char**)
 {
+    vector<string> paths = indexing::find_in_db("georgia.docx", "..\\..\\index.db");
+    for (auto& it: paths)
+        cout << it << endl;
     fsWindow main_window;
     main_window.work();
     return 0;
