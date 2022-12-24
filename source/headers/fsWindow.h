@@ -275,11 +275,6 @@ class fsWindow
         HANDLE find_mutex;
         HANDLE search_event;
 
-        HANDLE loading_thread;
-        HANDLE ic_thread_handle;
-        HANDLE i_thread_handle;
-        HANDLE f_thread_handle;
-
         HWND hwnd; // Created window handle
         WNDCLASSEXA wc;
         ImVec4 clear_color; // Background color
@@ -306,12 +301,12 @@ class fsWindow
             load_thread_package.pointer_to_vector_makers = feature_makers;
             load_thread_package.loaded = loaded;
 
-            loading_thread = CreateThread(NULL, 0, loading_funcition, &load_thread_package, 0, 0);
+            HANDLE loading_thread = CreateThread(NULL, 0, loading_funcition, &load_thread_package, 0, 0);
             //
 
-            ic_thread_handle = CreateThread(NULL, 0, content_indexing_thread, 0, 0, 0);
-            i_thread_handle = CreateThread(NULL, 0, indexing_thread, 0, 0, 0);
-            f_thread_handle = CreateThread(NULL, 0, find_thread, 0, 0, 0);
+            HANDLE ic_thread_handle = CreateThread(NULL, 0, content_indexing_thread, 0, 0, 0);
+            HANDLE i_thread_handle = CreateThread(NULL, 0, indexing_thread, 0, 0, 0);
+            HANDLE f_thread_handle = CreateThread(NULL, 0, find_thread, 0, 0, 0);
 
             // Create application window
             //ImGui_ImplWin32_EnableDpiAwareness();
@@ -385,12 +380,6 @@ class fsWindow
             CleanupDeviceD3D();
             ::DestroyWindow(hwnd);
             ::UnregisterClassA(wc.lpszClassName, wc.hInstance);
-
-            // Terminate threads
-            TerminateThread(loading_thread, 0);
-            TerminateThread(ic_thread_handle, 0);
-            TerminateThread(i_thread_handle, 0);
-            TerminateThread(f_thread_handle, 0);
 
             //free vector<FVectorMaker>
 
