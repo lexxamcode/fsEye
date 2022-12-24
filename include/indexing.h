@@ -336,8 +336,8 @@ namespace indexing
         
         sqlite3_exec(db, "END TRANSACTION", nullptr, nullptr, &z_err_msg);
         sqlite3_close(db);
-        for (auto& maker: vector_makers)
-            delete maker;
+        // for (auto& maker: vector_makers)
+        //     delete maker;
         return 0;
     }
 
