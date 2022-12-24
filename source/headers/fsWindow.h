@@ -8,6 +8,19 @@
 
 using namespace std;
 
+void TextToClipboard(const char *text)
+ {
+    if (OpenClipboard(0))
+    {
+        EmptyClipboard();
+        char *hBuff = (char *) GlobalAlloc(GMEM_FIXED, strlen(text) + 1);
+        strcpy(hBuff, text);
+        SetClipboardData(CF_TEXT, hBuff);
+        CloseClipboard();
+    }
+}
+
+
 // Data
 static ID3D11Device*            g_pd3dDevice = NULL;
 static ID3D11DeviceContext*     g_pd3dDeviceContext = NULL;
@@ -262,6 +275,11 @@ class fsWindow
         HANDLE find_mutex;
         HANDLE search_event;
 
+        HANDLE loading_thread;
+        HANDLE ic_thread_handle;
+        HANDLE i_thread_handle;
+        HANDLE f_thread_handle;
+
         HWND hwnd; // Created window handle
         WNDCLASSEXA wc;
         ImVec4 clear_color; // Background color
@@ -288,12 +306,12 @@ class fsWindow
             load_thread_package.pointer_to_vector_makers = feature_makers;
             load_thread_package.loaded = loaded;
 
-            HANDLE loading_thread = CreateThread(NULL, 0, loading_funcition, &load_thread_package, 0, 0);
+            loading_thread = CreateThread(NULL, 0, loading_funcition, &load_thread_package, 0, 0);
             //
 
-            HANDLE ic_thread_handle = CreateThread(NULL, 0, content_indexing_thread, 0, 0, 0);
-            HANDLE i_thread_handle = CreateThread(NULL, 0, indexing_thread, 0, 0, 0);
-            HANDLE f_thread_handle = CreateThread(NULL, 0, find_thread, 0, 0, 0);
+            ic_thread_handle = CreateThread(NULL, 0, content_indexing_thread, 0, 0, 0);
+            i_thread_handle = CreateThread(NULL, 0, indexing_thread, 0, 0, 0);
+            f_thread_handle = CreateThread(NULL, 0, find_thread, 0, 0, 0);
 
             // Create application window
             //ImGui_ImplWin32_EnableDpiAwareness();
@@ -368,11 +386,15 @@ class fsWindow
             ::DestroyWindow(hwnd);
             ::UnregisterClassA(wc.lpszClassName, wc.hInstance);
 
+            // Terminate threads
+            TerminateThread(loading_thread, 0);
+            TerminateThread(ic_thread_handle, 0);
+            TerminateThread(i_thread_handle, 0);
+            TerminateThread(f_thread_handle, 0);
+
             //free vector<FVectorMaker>
-            if (loaded)
-                delete feature_makers;
+
             //free mutex
-                delete load_mutex;
                 delete loaded;
         }
         void work()
@@ -569,7 +591,12 @@ class fsWindow
                     ImGui::TextColored(ImVec4(1, 1, 0, 1), "Found files: ");
                     ImGui::BeginChild("Scrolling");
                     for (size_t i = 0; i < request_package.found.size(); i++)
-                        ImGui::Text("%s", request_package.found[i].c_str());
+                    {
+                        if(ImGui::Selectable(request_package.found[i].c_str()) == true)
+                        {
+                            TextToClipboard(request_package.found[i].c_str());
+                        };
+                    }
                     ImGui::EndChild();
                     ImGui::End();
                 }

@@ -12,7 +12,6 @@ void ShowConsole()
     ::ShowWindow(::GetConsoleWindow(), SW_SHOW);
 }
 
-
 // Main code
 int main(int, char**)
 {
