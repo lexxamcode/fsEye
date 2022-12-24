@@ -47,6 +47,30 @@ namespace indexing
         return vector_makers;
     }
 
+    void create_vector_makers_on_heap(const vector<string> languages, vector<FVectorMaker*>* &pointer_to_vector_makers)
+    {
+        //CREATE FEATURE MAKERS ALLOCATED ON HEAP
+        vector<FVectorMaker*>* vector_makers = pointer_to_vector_makers;
+        vector_makers->reserve(languages.size());
+
+        time_t start = time(NULL);
+        cout << "Creating vector makers...";
+        int threads = omp_get_thread_num();
+        #pragma omp parallel for num_threads(threads)
+        for (auto& language: languages)
+        {
+            string dict = "..\\..\\data\\dictionaries\\" + language + "_dictionary.txt";
+            string stopwords = "..\\..\\data\\stopwords\\" + language + "_stopwords.txt";
+            FVectorMaker* temp = new FVectorMaker(dict, stopwords, language);
+            vector_makers->push_back(temp);
+        }
+        
+        time_t end = time(NULL) - start;
+        cout << "Created vector makers " << end << "sec" << endl;
+        pointer_to_vector_makers = vector_makers;
+        //
+    }
+
     void save_entire_directory_to_db(const string& dir, sqlite3* &db, int rc, char* &errmsg)
     {
         
@@ -163,6 +187,42 @@ namespace indexing
         return paths;
     }
 
+    vector<string> find_in_db(const string& request, const string& sql_filename, vector<string>& found)
+    {
+        sqlite3* db;
+        int rc = sqlite3_open(sql_filename.c_str(), &db);
+
+        found.clear();
+
+        if (rc)
+        {
+            cout << "Can't open the database" << sql_filename << endl;
+            return found;
+        }
+        else
+        {
+            cout << "Successfully opened database" << endl;
+        }
+
+        string sql_request = "SELECT PATH FROM FILES WHERE FNAME='" + request + "'";
+        sqlite3_stmt *stmt;
+        rc = sqlite3_prepare_v2(db, sql_request.c_str(), sql_request.length(), &stmt, nullptr);
+
+        if (rc != SQLITE_OK)
+        {
+            cout << "Can not process the request" << endl;
+            cout << sqlite3_errstr(sqlite3_extended_errcode(db)) << "\n" << sqlite3_errmsg(db) << endl;
+        }
+
+        while ((rc = sqlite3_step(stmt)) == SQLITE_ROW)
+        {
+            found.push_back(string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0))));
+        }
+
+        sqlite3_close(db);
+        return found;
+    }
+
     void fill_feature_database(const string& dir, const vector<FVectorMaker*>& vector_makers, sqlite3* db, int rc, char* errmsg)
     {
         const char* data = "Callback function called";
@@ -222,13 +282,11 @@ namespace indexing
         }
     }
 
-    int index_directory_by_content(const string& dir, const string& sql_filename, vector<string> languages)
+    int index_directory_by_content(const string& dir, const string& sql_filename, vector<string> languages, vector<FVectorMaker*> vector_makers)
     {
         sqlite3* db;
         int rc = sqlite3_open(sql_filename.c_str(), &db);
         char* z_err_msg = 0;
-
-        vector<FVectorMaker*> vector_makers = create_vector_makers(languages);
 
         if (rc)
         {
@@ -327,7 +385,7 @@ namespace indexing
         return files_features;
     }
 
-    vector<string> knn_algorithm(const string& text, const string& path_to_db, size_t k, const vector<FVectorMaker*> vector_makers)
+    vector<string> knn_algorithm(const string& text, const string& path_to_db, size_t k, const vector<FVectorMaker*> vector_makers, vector<string>& found)
     {
         map<string, FVector> features_of_request;
         vector<string> languages;
@@ -359,8 +417,7 @@ namespace indexing
         }
         sort(distances.begin(), distances.end());
 
-        vector<string> found;
-
+        found.clear();
         for (int i = distances.size() - 1; (i >= (int)(distances.size()) - (int)(k)) && (i >= 0); i--)
         {
             found.push_back(distances[i].second);
