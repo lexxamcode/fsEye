@@ -144,24 +144,20 @@ DWORD WINAPI find_thread(LPVOID lpParam)
 {
     HANDLE find_event = OpenEvent(EVENT_ALL_ACCESS, TRUE, (LPCSTR)"search_event");
     HANDLE find_mutex = OpenMutex(MUTEX_ALL_ACCESS, TRUE, (LPCSTR)"find_mutex");
+    HANDLE search_mutex = OpenMutex(MUTEX_ALL_ACCESS, TRUE, (LPCSTR)"search_mutex");
 
     while(true)
     {
         WaitForSingleObject(find_event, INFINITE);
-
-        // WaitForSingleObject(find_mutex, INFINITE);
-        // cout << GetLastError() << endl;
-        // request_package.searching = true;
-        // ReleaseMutex(find_mutex);
+        WaitForSingleObject(search_mutex, INFINITE);
 
         if (request_package.by_content)
             indexing::knn_algorithm(request_package.request, "..\\..\\index.db", 10, request_package.feature_makers, request_package.found);
         else
             indexing::find_in_db(request_package.request, "..\\..\\index.db", request_package.found);
-        
-        // WaitForSingleObject(find_mutex, INFINITE);
-        // request_package.searching = false;
-        // ReleaseMutex(find_mutex);
+
+        ReleaseMutex(search_mutex);
+
     }
     return 0;
 }
@@ -269,10 +265,12 @@ class fsWindow
         bool done;
 
         HANDLE load_mutex;
+
         HANDLE index_event;
         HANDLE index_content_event;
         HANDLE index_mutex;
-        HANDLE find_mutex;
+
+        HANDLE search_mutex;
         HANDLE search_event;
 
         HWND hwnd; // Created window handle
@@ -286,7 +284,7 @@ class fsWindow
             search_event = CreateEvent(NULL, FALSE, FALSE, (LPCSTR)"search_event");
 
             index_mutex = CreateMutex(NULL, FALSE, (LPCSTR)"index_mutex");
-            find_mutex = CreateMutex(NULL, FALSE, (LPCSTR)"find_mutex");
+            search_mutex = CreateMutex(NULL, FALSE, (LPCSTR)"search_mutex");
 
             // Load feature_makers in separate thread
             load_mutex = CreateMutex(NULL, FALSE, (LPCSTR)"load_mutex");
@@ -431,7 +429,7 @@ class fsWindow
                                 arg.erase(0, 8);
 
                                 WaitForSingleObject(load_mutex, INFINITE);
-                                WaitForSingleObject(find_mutex, INFINITE);
+                                WaitForSingleObject(search_mutex, INFINITE);
                                 cout << "loaded: " << *loaded << endl;
                                 cout << "fmakers.size(): " << feature_makers->size() << endl;
                                 cout << "searching: " << request_package.searching << endl;
@@ -447,7 +445,7 @@ class fsWindow
                                     show_indexing_error = true;
 
                                 ReleaseMutex(load_mutex);
-                                ReleaseMutex(find_mutex);
+                                ReleaseMutex(search_mutex);
 
                                 cout << arg << endl;
                                 for (auto& it: results)
@@ -490,10 +488,10 @@ class fsWindow
                             ImGui::Text("Indexing... Search and indexing are not available while indexing.");
                     ReleaseMutex(index_mutex);
 
-                     WaitForSingleObject(find_mutex, INFINITE);
+                     WaitForSingleObject(search_mutex, INFINITE);
                         if(request_package.searching)
                             ImGui::Text("Searching... Please wait.");
-                    ReleaseMutex(index_mutex);
+                    ReleaseMutex(search_mutex);
 
                     ImGui::End();
                 }
@@ -571,8 +569,11 @@ class fsWindow
                     ImGui::End();
                 }
                 // RESULTS WINDOW
-                WaitForSingleObject(find_mutex, INFINITE);
-                if (request_package.found.size() && !request_package.searching)
+                WaitForSingleObject(search_mutex, INFINITE);
+                bool searching = request_package.searching;
+                ReleaseMutex(search_mutex);
+
+                if (request_package.found.size() && !searching)
                 {
                     ImGui::SetNextWindowSize(ImVec2(500, 500), ImGuiCond_Always);
                     ImGui::SetNextWindowPos(ImVec2(0, 100), ImGuiCond_Always);
@@ -589,7 +590,6 @@ class fsWindow
                     ImGui::EndChild();
                     ImGui::End();
                 }
-                ReleaseMutex(find_mutex);
 
                 // RENDERING
                 ImGui::Render();
