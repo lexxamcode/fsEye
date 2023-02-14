@@ -1,16 +1,10 @@
-#include "indexing.h"
-#include "imgui/imgui.h"
-#include "imgui/imgui_stdlib.h"
-#include "imgui/imgui_impl_win32.h"
-#include "imgui/imgui_impl_dx11.h"
-#include <d3d11.h>
-#include <tchar.h>
+#include "multithread_primitives.h"
 
 using namespace std;
 
 void TextToClipboard(const char *text)
  {
-    if (OpenClipboard(0))
+    if (OpenClipboard(nullptr))
     {
         EmptyClipboard();
         char *hBuff = (char *) GlobalAlloc(GMEM_FIXED, strlen(text) + 1);
@@ -22,10 +16,10 @@ void TextToClipboard(const char *text)
 
 
 // Data
-static ID3D11Device*            g_pd3dDevice = NULL;
-static ID3D11DeviceContext*     g_pd3dDeviceContext = NULL;
-static IDXGISwapChain*          g_pSwapChain = NULL;
-static ID3D11RenderTargetView*  g_mainRenderTargetView = NULL;
+static ID3D11Device*            g_pd3dDevice = nullptr;
+static ID3D11DeviceContext*     g_pd3dDeviceContext = nullptr;
+static IDXGISwapChain*          g_pSwapChain = nullptr;
+static ID3D11RenderTargetView*  g_mainRenderTargetView = nullptr;
 
 // Forward declarations of helper functions
 bool CreateDeviceD3D(HWND hWnd);
@@ -38,12 +32,13 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 struct lf_package
 {
     vector<FVectorMaker*>* pointer_to_vector_makers;
+    string data_folder_path;
     vector<string> languages;
     bool* loaded;
 };
 
 // Loading vector makers in separate thread
-DWORD WINAPI loading_funcition(LPVOID lpParam)
+DWORD WINAPI loading_function(LPVOID lpParam)
 {
     lf_package* info = (lf_package*)lpParam;
 
@@ -51,9 +46,8 @@ DWORD WINAPI loading_funcition(LPVOID lpParam)
 
     for (auto& it: info->languages)
         cout << it << endl;
-    indexing::create_vector_makers_on_heap(info->languages, info->pointer_to_vector_makers);
+    indexing::create_vector_makers_on_heap(info->data_folder_path, info->languages, info->pointer_to_vector_makers);
     cout << "LOADED" << endl;
-
 
     // bool loaded is a critical section of window class
     HANDLE load_mutex = OpenMutex(MUTEX_ALL_ACCESS, TRUE, (LPCSTR)"load_mutex");
@@ -62,11 +56,7 @@ DWORD WINAPI loading_funcition(LPVOID lpParam)
 
     ReleaseMutex(load_mutex);
 
-    while(true)
-    {
-        // Cycle thread
-    }
-    return 0;
+    ExitThread(0);
 }
 
 struct index_parameters
@@ -105,7 +95,6 @@ DWORD WINAPI content_indexing_thread(LPVOID lpParam)
         ci_parameters.indexing = false;
         ReleaseMutex(index_mutex);
     }
-    return 0;
 }
 
 DWORD WINAPI indexing_thread(LPVOID lpParam)
@@ -126,7 +115,6 @@ DWORD WINAPI indexing_thread(LPVOID lpParam)
         ci_parameters.indexing = false;
         ReleaseMutex(index_mutex);
     }
-    return 0;
 }
 
 struct find_package
@@ -136,6 +124,8 @@ struct find_package
     vector<string> found;
     vector<FVectorMaker*> feature_makers;
     bool searching;
+
+    find_package(): by_content(false), request(""), searching(false) {}
 };
 
 find_package request_package;
@@ -143,7 +133,6 @@ find_package request_package;
 DWORD WINAPI find_thread(LPVOID lpParam)
 {
     HANDLE find_event = OpenEvent(EVENT_ALL_ACCESS, TRUE, (LPCSTR)"search_event");
-    HANDLE find_mutex = OpenMutex(MUTEX_ALL_ACCESS, TRUE, (LPCSTR)"find_mutex");
     HANDLE search_mutex = OpenMutex(MUTEX_ALL_ACCESS, TRUE, (LPCSTR)"search_mutex");
 
     while(true)
@@ -159,7 +148,6 @@ DWORD WINAPI find_thread(LPVOID lpParam)
         ReleaseMutex(search_mutex);
 
     }
-    return 0;
 }
 
 bool CreateDeviceD3D(HWND hWnd)
@@ -185,7 +173,7 @@ sd.BufferDesc.Height = 0;
     //createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
     D3D_FEATURE_LEVEL featureLevel;
     const D3D_FEATURE_LEVEL featureLevelArray[2] = { D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_0, };
-    if (D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, createDeviceFlags, featureLevelArray, 2, D3D11_SDK_VERSION, &sd, &g_pSwapChain, &g_pd3dDevice, &featureLevel, &g_pd3dDeviceContext) != S_OK)
+    if (D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, createDeviceFlags, featureLevelArray, 2, D3D11_SDK_VERSION, &sd, &g_pSwapChain, &g_pd3dDevice, &featureLevel, &g_pd3dDeviceContext) != S_OK)
         return false;
 
     CreateRenderTarget();
@@ -195,22 +183,22 @@ sd.BufferDesc.Height = 0;
 void CleanupDeviceD3D()
 {
     CleanupRenderTarget();
-    if (g_pSwapChain) { g_pSwapChain->Release(); g_pSwapChain = NULL; }
-    if (g_pd3dDeviceContext) { g_pd3dDeviceContext->Release(); g_pd3dDeviceContext = NULL; }
-    if (g_pd3dDevice) { g_pd3dDevice->Release(); g_pd3dDevice = NULL; }
+    if (g_pSwapChain) { g_pSwapChain->Release(); g_pSwapChain = nullptr; }
+    if (g_pd3dDeviceContext) { g_pd3dDeviceContext->Release(); g_pd3dDeviceContext = nullptr; }
+    if (g_pd3dDevice) { g_pd3dDevice->Release(); g_pd3dDevice = nullptr; }
 }
 
 void CreateRenderTarget()
 {
     ID3D11Texture2D* pBackBuffer;
     g_pSwapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
-    g_pd3dDevice->CreateRenderTargetView(pBackBuffer, NULL, &g_mainRenderTargetView);
+    g_pd3dDevice->CreateRenderTargetView(pBackBuffer, nullptr, &g_mainRenderTargetView);
     pBackBuffer->Release();
 }
 
 void CleanupRenderTarget()
 {
-    if (g_mainRenderTargetView) { g_mainRenderTargetView->Release(); g_mainRenderTargetView = NULL; }
+    if (g_mainRenderTargetView) { g_mainRenderTargetView->Release(); g_mainRenderTargetView = nullptr; }
 }
 
 // Forward declare message handler from imgui_impl_win32.cpp
@@ -229,7 +217,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     switch (msg)
     {
     case WM_SIZE:
-        if (g_pd3dDevice != NULL && wParam != SIZE_MINIMIZED)
+        if (g_pd3dDevice != nullptr && wParam != SIZE_MINIMIZED)
         {
             CleanupRenderTarget();
             g_pSwapChain->ResizeBuffers(0, (UINT)LOWORD(lParam), (UINT)HIWORD(lParam), DXGI_FORMAT_UNKNOWN, 0);
@@ -250,13 +238,20 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 class fsWindow
 {
     private:
-        string request;
-        string directory;
-
+        // FVectorMakers parameters
         vector<string> languages;
-        vector<string> results;
         vector<FVectorMaker*>* feature_makers;
+        string data_folder_path;
 
+        // Indexing parameters
+        string indexing_directory;
+        string database_path;
+
+        // Search variables
+        vector<string> results;
+        string request;
+
+        // Windows and messages output conditions
         bool show_request_error;
         bool show_indexing_error;
         bool show_results;
@@ -277,41 +272,44 @@ class fsWindow
         WNDCLASSEXA wc;
         ImVec4 clear_color; // Background color
     public:
-        fsWindow()
+        fsWindow(const string& data_folder_path, const string& database_path)
         {
-            index_content_event = CreateEvent(NULL, FALSE, FALSE, (LPCSTR)"index_content_event");
-            index_event = CreateEvent(NULL, FALSE, FALSE, (LPCSTR)"index_event");
-            search_event = CreateEvent(NULL, FALSE, FALSE, (LPCSTR)"search_event");
+            index_content_event = CreateEvent(nullptr, FALSE, FALSE, (LPCSTR)"index_content_event");
+            index_event = CreateEvent(nullptr, FALSE, FALSE, (LPCSTR)"index_event");
+            search_event = CreateEvent(nullptr, FALSE, FALSE, (LPCSTR)"search_event");
 
-            index_mutex = CreateMutex(NULL, FALSE, (LPCSTR)"index_mutex");
-            search_mutex = CreateMutex(NULL, FALSE, (LPCSTR)"search_mutex");
+            index_mutex = CreateMutex(nullptr, FALSE, (LPCSTR)"index_mutex");
+            search_mutex = CreateMutex(nullptr, FALSE, (LPCSTR)"search_mutex");
 
             // Load feature_makers in separate thread
-            load_mutex = CreateMutex(NULL, FALSE, (LPCSTR)"load_mutex");
+            load_mutex = CreateMutex(nullptr, FALSE, (LPCSTR)"load_mutex");
             loaded = new bool;
             *loaded = false;
             feature_makers = new vector<FVectorMaker*>;
-            
+
+            this->data_folder_path = data_folder_path;
+            this->database_path = database_path;
+
             // Fill package for loading thread
             lf_package load_thread_package;
             languages = {"en", "ru"};
             load_thread_package.languages = languages;
             load_thread_package.pointer_to_vector_makers = feature_makers;
             load_thread_package.loaded = loaded;
+            load_thread_package.data_folder_path = data_folder_path;
 
-            HANDLE loading_thread = CreateThread(NULL, 0, loading_funcition, &load_thread_package, 0, 0);
+            HANDLE loading_thread = CreateThread(nullptr, 0, loading_function, &load_thread_package, 0, 0);
             //
 
-            HANDLE ic_thread_handle = CreateThread(NULL, 0, content_indexing_thread, 0, 0, 0);
-            HANDLE i_thread_handle = CreateThread(NULL, 0, indexing_thread, 0, 0, 0);
-            HANDLE f_thread_handle = CreateThread(NULL, 0, find_thread, 0, 0, 0);
+            HANDLE ic_thread_handle = CreateThread(nullptr, 0, content_indexing_thread, 0, 0, 0);
+            HANDLE i_thread_handle = CreateThread(nullptr, 0, indexing_thread, 0, 0, 0);
+            HANDLE f_thread_handle = CreateThread(nullptr, 0, find_thread, 0, 0, 0);
 
             // Create application window
             //ImGui_ImplWin32_EnableDpiAwareness();
-            wc = { sizeof(wc), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, "fsEye", NULL };
+            wc = { sizeof(wc), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(nullptr), nullptr, nullptr, nullptr, nullptr, "fsEye", nullptr };
             ::RegisterClassExA(&wc);
-            wc.hIcon = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE("..\\..\\icon.png"));
-            hwnd = ::CreateWindowA(wc.lpszClassName, "fsEye", WS_OVERLAPPED | WS_SYSMENU, 100, 100, 800, 600, NULL, NULL, wc.hInstance, NULL);
+            hwnd = ::CreateWindowA(wc.lpszClassName, "fsEye", WS_OVERLAPPED | WS_SYSMENU, 100, 100, 800, 600, nullptr, nullptr, wc.hInstance, nullptr);
 
                 // Initialize Direct3D
             if (!CreateDeviceD3D(hwnd))
@@ -382,7 +380,8 @@ class fsWindow
             //free vector<FVectorMaker>
 
             //free mutex
-                delete loaded;
+            delete loaded;
+            delete feature_makers;
         }
         void work()
         {
@@ -391,7 +390,7 @@ class fsWindow
                 // Poll and handle messages (inputs, window resize, etc.)
                 // See the WndProc() function below for our to dispatch events to the Win32 backend.
                 MSG msg;
-                while (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE))
+                while (::PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE))
                 {
                         ::TranslateMessage(&msg);
                         ::DispatchMessage(&msg);
@@ -418,10 +417,15 @@ class fsWindow
                     //ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
                     //ImGui::Checkbox("Another Window", &show_another_window);
                     ImGui::SameLine();
-                    if (ImGui::Button("Search") && request.size())                            // Buttons return true when clicked (most widgets return true when edited/activated)
+                    if (ImGui::Button("Search") && !request.empty())                            // Buttons return true when clicked (most widgets return true when edited/activated)
                     {
+                        // Check if indexing is not working at the moment
                         WaitForSingleObject(index_mutex, INFINITE);
-                        if (!ci_parameters.indexing)
+                        bool indexing = ci_parameters.indexing;
+                        ReleaseMutex(index_mutex);
+
+                        // and if database is not being processed, we can access it
+                        if (!indexing)
                         {
                             string arg = request;
                             if (arg.rfind("content:", 0) == 0)
@@ -433,7 +437,7 @@ class fsWindow
                                 cout << "loaded: " << *loaded << endl;
                                 cout << "fmakers.size(): " << feature_makers->size() << endl;
                                 cout << "searching: " << request_package.searching << endl;
-                                if (*loaded && feature_makers->size() && !request_package.searching)
+                                if (*loaded && !feature_makers->empty() && !request_package.searching)
                                 {
                                     request_package.feature_makers = *feature_makers;
                                     request_package.request = arg;
@@ -466,11 +470,7 @@ class fsWindow
                             }
                         }
                         else
-                        {
                             show_request_error = true;
-                        }
-                            // Else Indexing is going on
-                        
                     }
                     ImGui::SameLine();
                     ImGui::Text("found: %d", request_package.found.size());
@@ -502,15 +502,15 @@ class fsWindow
                     ImGui::SetNextWindowSize(ImVec2(300, 700), ImGuiCond_Always);
                     ImGui::SetNextWindowPos(ImVec2(500, 100), ImGuiCond_Always);
                     ImGui::Begin("Settings", &show_settings);
-                    ImGui::InputText("Directory", &directory);
-                    if (ImGui::Button("Index") && directory.size())                            // Buttons return true when clicked (most widgets return true when edited/activated)
+                    ImGui::InputText("Directory", &indexing_directory);
+                    if (ImGui::Button("Index") && !indexing_directory.empty())                            // Buttons return true when clicked (most widgets return true when edited/activated)
                     {
                         WaitForSingleObject(index_mutex, INFINITE);
                         if (!ci_parameters.indexing && !i_parameters.indexing)
                         {
                             if (*loaded)
                                 {
-                                    i_parameters.directory = directory;
+                                    i_parameters.directory = indexing_directory;
                                     SetEvent(index_event);
                                 }
                             else
@@ -518,16 +518,16 @@ class fsWindow
                         }
                         ReleaseMutex(index_mutex);
                     }
-                    if (ImGui::Button("Index by content") && directory.size())                            // Buttons return true when clicked (most widgets return true when edited/activated)
+                    if (ImGui::Button("Index by content") && !indexing_directory.empty())                            // Buttons return true when clicked (most widgets return true when edited/activated)
                     {
                         WaitForSingleObject(index_mutex, INFINITE);
                         if (!ci_parameters.indexing && !i_parameters.indexing)
                         {
                             WaitForSingleObject(load_mutex, INFINITE);
 
-                            if (languages.size() && *loaded && feature_makers->size())
+                            if (!languages.empty() && *loaded && !feature_makers->empty())
                             {
-                                ci_parameters.directory = directory;
+                                ci_parameters.directory = indexing_directory;
                                 ci_parameters.feature_makers = *feature_makers;
                                 ci_parameters.languages = languages;
                                 SetEvent(index_content_event);
@@ -553,7 +553,7 @@ class fsWindow
                 {
                     ImGui::Begin("Request error");
 
-                    ImGui::Text("Wrong request parametr.\n Use name:[request] to find file by name,\nUse content:[request] to find file by content");
+                    ImGui::Text("Wrong request parameter.\n Use name:[request] to find file by name,\nUse content:[request] to find file by content");
                     if (ImGui::Button("Close"))
                         show_request_error = false;
                     ImGui::End();
@@ -573,7 +573,7 @@ class fsWindow
                 bool searching = request_package.searching;
                 ReleaseMutex(search_mutex);
 
-                if (request_package.found.size() && !searching)
+                if (!request_package.found.empty() && !searching)
                 {
                     ImGui::SetNextWindowSize(ImVec2(500, 500), ImGuiCond_Always);
                     ImGui::SetNextWindowPos(ImVec2(0, 100), ImGuiCond_Always);
@@ -582,10 +582,8 @@ class fsWindow
                     ImGui::BeginChild("Scrolling");
                     for (size_t i = 0; i < request_package.found.size(); i++)
                     {
-                        if(ImGui::Selectable(request_package.found[i].c_str()) == true)
-                        {
+                        if(ImGui::Selectable(request_package.found[i].c_str()))
                             TextToClipboard(request_package.found[i].c_str());
-                        };
                     }
                     ImGui::EndChild();
                     ImGui::End();
@@ -594,7 +592,7 @@ class fsWindow
                 // RENDERING
                 ImGui::Render();
                 const float clear_color_with_alpha[4] = { clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w };
-                g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, NULL);
+                g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, nullptr);
                 g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, clear_color_with_alpha);
                 ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 

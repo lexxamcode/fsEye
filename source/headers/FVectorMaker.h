@@ -15,17 +15,17 @@ using namespace textProcessing;
     It provides work with given text, feature vectors,
     Stopwords and more. 
     Awailable languages:
-        danish dk 
-        dutch nl 
-        english en 
-        finnish fi
-        french fr
-        german de
-        italian it
-        norwegian no
-        portuguese pt
-        russian ru
-        spanish es
+        Danish dk
+        Dutch nl
+        English en
+        Finnish fi
+        French fr
+        German de
+        Italian it
+        Norwegian no
+        Portuguese pt
+        Russian ru
+        Spanish es
 */
 class FVectorMaker
 {
@@ -164,6 +164,7 @@ class FVectorMaker
             std::sort(_dictionary.begin(), _dictionary.end());
             _dictionary.erase(std::unique(_dictionary.begin(), _dictionary.end()), _dictionary.end());
         }
+
         // Now We can Prepare this class for making Feature vector
         void set_ready(const string& init_dict_path, const string& init_stopwords_path, const string& language)
         {
@@ -185,18 +186,18 @@ class FVectorMaker
             - One Word per line
             So any file that is going to be the dictionary or stopwords list will be cleared, tokenized and stemmed
             Awailable languages:
-                danish dk 
-                dutch nl 
-                english en 
-                finnish fi
-                french fr
-                german de
-                italian it
-                norwegian no
-                portuguese pt
-                russian ru
-                spanish es
-                swedish se
+                Danish dk
+                Dutch nl
+                English en
+                Finnish fi
+                French fr
+                German de
+                Italian it
+                Norwegian no
+                Portuguese pt
+                Russian ru
+                Spanish es
+                Swedish se
         */
         FVectorMaker()
         {
@@ -225,16 +226,16 @@ class FVectorMaker
         }
 
         //Feature Vector make function
-        //regime: 0 - make feature vector of text
+        //regime: 0 - make feature vector of string
         //        1 - make feature vector of file
-        feature_vector::FVector make_feature_vector(const string& text_or_file, bool regime) const
+        feature_vector::FVector make_feature_vector(const string& string_or_filename, bool regime) const
         {
             multiset<string> text_words;
             vector<string> temp;
             if (regime)
-                temp = text_to_vector(text_or_file, _stemmer);
+                temp = text_to_vector(string_or_filename, _stemmer);
             else
-                temp = string_to_vector(text_or_file, _stemmer);
+                temp = string_to_vector(string_or_filename, _stemmer);
 
             for (auto &word: temp)
                 text_words.insert(stem_word(word, _stemmer));

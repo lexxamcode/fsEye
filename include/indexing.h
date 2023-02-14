@@ -10,8 +10,6 @@ namespace indexing
     namespace pt = boost::property_tree;
     using namespace boost::filesystem;
 
-    const std::regex json_file("(.*?)(\.json)");
-
     int callback(void *a_param, int argc, char **argv, char **column)
     {
         for (int i=0; i< argc; i++)
@@ -21,12 +19,15 @@ namespace indexing
         return 0;
     }
 
-    vector<FVectorMaker*> create_vector_makers(const vector<string> languages)
+    vector<FVectorMaker*> create_vector_makers(const string& data_folder_path, const vector<string> languages)
     {
         //CREATE FEATURE MAKERS
 
         vector<FVectorMaker*> vector_makers;
         vector_makers.reserve(languages.size());
+
+        string dictionary_filename = "_dictionary.txt";
+        string stopwords_filename = "_stopwords.txt";
 
         time_t start = time(NULL);
         cout << "Creating vector makers...";
@@ -34,8 +35,9 @@ namespace indexing
         #pragma omp parallel for num_threads(threads)
         for (auto& language: languages)
         {
-            string dict = "..\\..\\data\\dictionaries\\" + language + "_dictionary.txt";
-            string stopwords = "..\\..\\data\\stopwords\\" + language + "_stopwords.txt";
+            string dict = data_folder_path + "/dictionaries/" + language +  dictionary_filename;
+            string stopwords = data_folder_path + "/stopwords/" + language + stopwords_filename;
+
             FVectorMaker* temp = new FVectorMaker(dict, stopwords, language);
             vector_makers.push_back(temp);
         }
@@ -47,11 +49,14 @@ namespace indexing
         return vector_makers;
     }
 
-    void create_vector_makers_on_heap(const vector<string> languages, vector<FVectorMaker*>* &pointer_to_vector_makers)
+    void create_vector_makers_on_heap(const string data_folder_path, const vector<string> languages, vector<FVectorMaker*>* &pointer_to_vector_makers)
     {
         //CREATE FEATURE MAKERS ALLOCATED ON HEAP
         vector<FVectorMaker*>* vector_makers = pointer_to_vector_makers;
         vector_makers->reserve(languages.size());
+
+        string dictionary_filename = "_dictionary.txt";
+        string stopwords_filename = "_stopwords.txt";
 
         time_t start = time(NULL);
         cout << "Creating vector makers...";
@@ -59,8 +64,9 @@ namespace indexing
         #pragma omp parallel for num_threads(threads)
         for (auto& language: languages)
         {
-            string dict = "..\\..\\data\\dictionaries\\" + language + "_dictionary.txt";
-            string stopwords = "..\\..\\data\\stopwords\\" + language + "_stopwords.txt";
+            string dict = data_folder_path + "/dictionaries/" + language + dictionary_filename;
+            string stopwords = data_folder_path + "/stopwords/" + language + stopwords_filename;
+
             FVectorMaker* temp = new FVectorMaker(dict, stopwords, language);
             vector_makers->push_back(temp);
         }

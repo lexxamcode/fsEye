@@ -289,3 +289,4 @@ namespace feature_vector
         return sum/max(sum1, sum2);
     }
 }
+ 

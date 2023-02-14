@@ -1,5 +1,5 @@
 #include "headers/fsWindow.h"
-
+#include <stdio.h>
 #pragma comment(lib, "d3d11.lib")
 
 void HideConsole()
@@ -15,8 +15,9 @@ void ShowConsole()
 // Main code
 int main(int, char**)
 {
-    HideConsole();   
-    fsWindow main_window;
+    std::cout << boost::filesystem::current_path().string() << std::endl;
+    //HideConsole();
+    fsWindow main_window("../data", "../index.db");
     main_window.work();
     return 0;
 }
