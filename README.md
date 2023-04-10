@@ -56,7 +56,7 @@ cd build
 cmake ..
 cmake --build .
 ```
-# Usage
+# Usage - OUTDATED
 fsEye is going to be complete separate app, but still, fsEye source files and include files allow user to index text files by content in a directory in different languages:
 ```cpp
     FVectorMaker en_index_maker(en_dict_path, en_stopwords_path, "en");//Class that processes text and making the feature vector of given language of it
