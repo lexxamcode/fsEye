@@ -5,7 +5,7 @@ Coursework.
 Stemming tools (include/stemming .h files) I took from this repository: https://github.com/Blake-Madden/OleanderStemmingLibrary
 
 # Installation
-1. Download set of a libraries Boost from here: https://www.boost.org/users/download/
+1. Download set of Boost libraries from here: https://www.boost.org/users/download/
 
 2. Follow this guide to build Boost: https://www.boost.org/doc/libs/1_62_0/more/getting_started/windows.html#simplified-build-from-source
 
